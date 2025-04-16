@@ -5,7 +5,10 @@ export class MenuScene extends Phaser.Scene {
 
   create() {
       // Add background
-      this.add.image(800, 600, 'bg').setScale(1.0);
+      const { width, height } = this.sys.game.config;
+      this.add.image(0, 0, 'bg')
+          .setOrigin(0, 0)
+          .setDisplaySize(width, height);
       
       // Add title text
       this.add.text(800, 300, 'Oliver: Depths of the Neon Sea', {

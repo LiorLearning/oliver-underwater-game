@@ -14,6 +14,7 @@ export class Level1Scene extends Phaser.Scene {
       this.bossTrigger = null;
       this.scoreText = null;
       this.itemsText = null;
+      this.toolImages = {}; // Store references to tool images
   }
 
   create() {
@@ -143,7 +144,7 @@ export class Level1Scene extends Phaser.Scene {
           const visual = this.add.circle(pos.x, pos.y, 100, 0x00ffff, 0.3);
           
           // Add tool image instead of text
-          this.add.image(pos.x, pos.y, pos.image)
+          const toolImage = this.add.image(pos.x, pos.y, pos.image)
               .setScale(0.3)
               .setOrigin(0.5);
           
@@ -151,6 +152,9 @@ export class Level1Scene extends Phaser.Scene {
           trigger.puzzleId = index + 1;
           trigger.toolName = pos.tool;
           trigger.toolImage = pos.image;
+          
+          // Store reference to the tool image for later access
+          this.toolImages[trigger.puzzleId] = toolImage;
           
           this.puzzleTriggers.add(trigger);
       });
@@ -373,5 +377,28 @@ export class Level1Scene extends Phaser.Scene {
 
   checkWinCondition() {
       // Not used in v0, but would be implemented for level completion logic
+  }
+
+  closePuzzle(puzzleId, success) {
+      // Handle the puzzle completion
+      if (success) {
+          // Remove the tool image when puzzle is successfully solved
+          if (this.toolImages[puzzleId]) {
+              // Fade out animation for the tool image
+              this.tweens.add({
+                  targets: this.toolImages[puzzleId],
+                  alpha: 0,
+                  scale: 2,
+                  duration: 1000,
+                  ease: 'Power2',
+                  onComplete: () => {
+                      this.toolImages[puzzleId].destroy();
+                  }
+              });
+          }
+          
+          // Show message
+          this.showMessage("Puzzle solved! Ship upgrade acquired!");
+      }
   }
 }

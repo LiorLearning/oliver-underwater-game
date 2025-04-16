@@ -18,8 +18,8 @@ export class PuzzleScene extends Phaser.Scene {
   }
 
   create() {
-      // Create overlay background
-      this.createBackground();
+      // Create dialog box background
+      this.createDialogBox();
       
       // Create puzzle based on ID
       this.createPuzzle();
@@ -31,26 +31,51 @@ export class PuzzleScene extends Phaser.Scene {
       this.createSidekick();
   }
 
-  createBackground() {
-      // Semi-transparent overlay
-      this.add.rectangle(800, 600, 1600, 1200, 0x000000, 0.8);
+  createDialogBox() {
+      const width = 1000;
+      const height = 800;
       
-      // Title
-      this.add.text(800, 100, `Solve to get the ${this.toolName}`, {
-          font: '64px Arial',
+      // Semi-transparent dark overlay for background
+      this.overlay = this.add.rectangle(800, 600, 1600, 1200, 0x000000, 0.7);
+      
+      // Dialog box background with rounded corners using a Graphics object
+      this.dialogBoxGraphics = this.add.graphics();
+      this.dialogBoxGraphics.fillStyle(0x3498db, 1);
+      this.dialogBoxGraphics.lineStyle(4, 0x2980b9);
+      this.dialogBoxGraphics.fillRoundedRect(800 - width/2, 600 - height/2, width, height, 20);
+      this.dialogBoxGraphics.strokeRoundedRect(800 - width/2, 600 - height/2, width, height, 20);
+      
+      // Create an invisible hitarea for interaction
+      this.dialogBox = this.add.zone(800, 600, width, height).setInteractive();
+      this.dialogBox.input.hitArea.setTo(-width/2, -height/2, width, height);
+      
+      // Dialog header with rounded corners
+      this.headerGraphics = this.add.graphics();
+      this.headerGraphics.fillStyle(0x2980b9, 1);
+      this.headerGraphics.fillRoundedRect(800 - width/2, 400 - 50, width, 100, 20);
+      
+      // Title text
+      this.titleText = this.add.text(800, 400, `Solve to get the ${this.toolName}`, {
+          font: '40px Arial',
+          fill: '#ffffff',
+          fontStyle: 'bold'
+      }).setOrigin(0.5);
+      
+      // Puzzle ID text
+      this.puzzleIdText = this.add.text(800, 450, `Puzzle ${this.puzzleId} - Level ${this.level}`, {
+          font: '28px Arial',
           fill: '#ffffff'
       }).setOrigin(0.5);
       
-      // Display tool image
-      this.add.image(800, 280, this.toolImage)
-          .setScale(0.8)
+      // Display tool image in a circular frame
+      this.toolCircle = this.add.circle(800, 530, 80, 0xffffff);
+      this.toolImage = this.add.image(800, 530, this.toolImage)
+          .setScale(0.6)
           .setOrigin(0.5);
       
-      // Puzzle ID display
-      this.add.text(800, 180, `Puzzle ${this.puzzleId} - Level ${this.level}`, {
-          font: '40px Arial',
-          fill: '#ffffff'
-      }).setOrigin(0.5);
+      // Add decorative elements
+      this.add.rectangle(550, 400, 10, 100, 0xe74c3c);
+      this.add.rectangle(1050, 400, 10, 100, 0xe74c3c);
   }
 
   createPuzzle() {
@@ -76,10 +101,18 @@ export class PuzzleScene extends Phaser.Scene {
       const num2 = Phaser.Math.Between(2, 10);
       this.correctAnswer = num1 * num2;
       
+      // Add question background with rounded corners using graphics
+      this.questionGraphics = this.add.graphics();
+      this.questionGraphics.fillStyle(0xecf0f1, 0.9);
+      this.questionGraphics.lineStyle(2, 0xbdc3c7);
+      this.questionGraphics.fillRoundedRect(800 - 300, 650 - 60, 600, 120, 15);
+      this.questionGraphics.strokeRoundedRect(800 - 300, 650 - 60, 600, 120, 15);
+      
       // Display problem
-      this.add.text(800, 380, `${num1} × ${num2} = ?`, {
-          font: '72px Arial',
-          fill: '#ffffff'
+      this.add.text(800, 650, `${num1} × ${num2} = ?`, {
+          font: '60px Arial',
+          fill: '#2c3e50',
+          fontStyle: 'bold'
       }).setOrigin(0.5);
       
       // Create input options
@@ -120,10 +153,18 @@ export class PuzzleScene extends Phaser.Scene {
           }
       }
       
+      // Add question background with rounded corners using graphics
+      this.questionGraphics = this.add.graphics();
+      this.questionGraphics.fillStyle(0xecf0f1, 0.9);
+      this.questionGraphics.lineStyle(2, 0xbdc3c7);
+      this.questionGraphics.fillRoundedRect(800 - 300, 650 - 60, 600, 120, 15);
+      this.questionGraphics.strokeRoundedRect(800 - 300, 650 - 60, 600, 120, 15);
+      
       // Display problem
-      this.add.text(800, 380, `${numerator1}/${denominator} + ${numerator2}/${denominator} = ?`, {
-          font: '72px Arial',
-          fill: '#ffffff'
+      this.add.text(800, 650, `${numerator1}/${denominator} + ${numerator2}/${denominator} = ?`, {
+          font: '50px Arial',
+          fill: '#2c3e50',
+          fontStyle: 'bold'
       }).setOrigin(0.5);
       
       // Generate wrong answers that look plausible
@@ -164,21 +205,30 @@ export class PuzzleScene extends Phaser.Scene {
       const pattern = Phaser.Utils.Array.GetRandom(patterns);
       this.correctAnswer = pattern.next;
       
+      // Add question background with rounded corners using graphics
+      this.questionGraphics = this.add.graphics();
+      this.questionGraphics.fillStyle(0xecf0f1, 0.9);
+      this.questionGraphics.lineStyle(2, 0xbdc3c7);
+      this.questionGraphics.fillRoundedRect(800 - 350, 630 - 75, 700, 150, 15);
+      this.questionGraphics.strokeRoundedRect(800 - 350, 630 - 75, 700, 150, 15);
+      
       // Display problem
-      this.add.text(800, 380, "What number comes next in this pattern?", {
-          font: '48px Arial',
-          fill: '#ffffff'
+      this.add.text(800, 600, "What number comes next in this pattern?", {
+          font: '36px Arial',
+          fill: '#2c3e50',
+          fontStyle: 'bold'
       }).setOrigin(0.5);
       
-      this.add.text(800, 440, pattern.sequence.join(", ") + ", ?", {
-          font: '72px Arial',
-          fill: '#ffffff'
+      this.add.text(800, 650, pattern.sequence.join(", ") + ", ?", {
+          font: '48px Arial',
+          fill: '#2c3e50',
+          fontWeight: 'bold'
       }).setOrigin(0.5);
       
       // Add hint text
-      this.add.text(800, 540, "Hint: " + pattern.rule, {
-          font: '36px Arial',
-          fill: '#aaaaaa'
+      this.hintText = this.add.text(800, 710, "Hint: " + pattern.rule, {
+          font: '24px Arial',
+          fill: '#7f8c8d'
       }).setOrigin(0.5);
       
       // Generate wrong answers
@@ -201,22 +251,23 @@ export class PuzzleScene extends Phaser.Scene {
       
       // Create button positions
       const positions = [
-          { x: 500, y: 700 },
-          { x: 1100, y: 700 },
-          { x: 500, y: 850 },
-          { x: 1100, y: 850 }
+          { x: 650, y: 750 },
+          { x: 950, y: 750 },
+          { x: 650, y: 850 },
+          { x: 950, y: 850 }
       ];
       
       // Create buttons for each answer
       answers.forEach((answer, index) => {
-          // Create button
-          const button = this.add.rectangle(
-              positions[index].x,
-              positions[index].y,
-              300,
-              100,
-              0x0066aa
-          ).setInteractive();
+          // Create button graphics with rounded corners
+          const buttonGraphics = this.add.graphics();
+          buttonGraphics.fillStyle(0x3498db, 1);
+          buttonGraphics.lineStyle(3, 0x2980b9);
+          buttonGraphics.fillRoundedRect(positions[index].x - 120, positions[index].y - 40, 240, 80, 15);
+          buttonGraphics.strokeRoundedRect(positions[index].x - 120, positions[index].y - 40, 240, 80, 15);
+          
+          // Create interactive zone for button
+          const button = this.add.zone(positions[index].x, positions[index].y, 240, 80).setInteractive();
           
           // Add text
           const text = this.add.text(
@@ -224,18 +275,27 @@ export class PuzzleScene extends Phaser.Scene {
               positions[index].y,
               answer.toString(),
               {
-                  font: '36px Arial',
-                  fill: '#ffffff'
+                  font: '32px Arial',
+                  fill: '#ffffff',
+                  fontWeight: 'bold'
               }
           ).setOrigin(0.5);
           
           // Button hover effect
           button.on('pointerover', () => {
-              button.setFillStyle(0x0088cc);
+              buttonGraphics.clear();
+              buttonGraphics.fillStyle(0x2980b9, 1);
+              buttonGraphics.lineStyle(3, 0x2980b9);
+              buttonGraphics.fillRoundedRect(positions[index].x - 126, positions[index].y - 42, 252, 84, 15);
+              buttonGraphics.strokeRoundedRect(positions[index].x - 126, positions[index].y - 42, 252, 84, 15);
           });
           
           button.on('pointerout', () => {
-              button.setFillStyle(0x0066aa);
+              buttonGraphics.clear();
+              buttonGraphics.fillStyle(0x3498db, 1);
+              buttonGraphics.lineStyle(3, 0x2980b9);
+              buttonGraphics.fillRoundedRect(positions[index].x - 120, positions[index].y - 40, 240, 80, 15);
+              buttonGraphics.strokeRoundedRect(positions[index].x - 120, positions[index].y - 40, 240, 80, 15);
           });
           
           // Check answer when clicked
@@ -246,66 +306,102 @@ export class PuzzleScene extends Phaser.Scene {
   }
 
   createButtons() {
-      // Add hint button
-      const hintButton = this.add.text(800, 1050, 'Get Hint', {
-          font: '36px Arial',
-          fill: '#ffffff',
-          backgroundColor: '#006633',
-          padding: { x: 20, y: 10 }
-      }).setOrigin(0.5).setInteractive();
+      // Add hint button with icon using graphics for rounded corners
+      const hintButtonGraphics = this.add.graphics();
+      hintButtonGraphics.fillStyle(0x27ae60, 1);
+      hintButtonGraphics.lineStyle(3, 0x219653);
+      hintButtonGraphics.fillRoundedRect(800 - 100, 950 - 30, 200, 60, 15);
+      hintButtonGraphics.strokeRoundedRect(800 - 100, 950 - 30, 200, 60, 15);
       
-      // Add close button
-      const closeButton = this.add.text(1450, 100, 'X', {
-          font: '48px Arial',
-          fill: '#ffffff',
-          backgroundColor: '#880000',
-          padding: { x: 15, y: 10 }
-      }).setOrigin(0.5).setInteractive();
+      // Create interactive zone for hint button
+      const hintButton = this.add.zone(800, 950, 200, 60).setInteractive();
       
-      closeButton.on('pointerdown', () => {
-          this.closePuzzle(false);
+      this.add.text(800, 950, 'Get Hint', {
+          font: '28px Arial',
+          fill: '#ffffff',
+          fontWeight: 'bold'
+      }).setOrigin(0.5);
+      
+      // Button effects
+      hintButton.on('pointerover', () => {
+          hintButtonGraphics.clear();
+          hintButtonGraphics.fillStyle(0x219653, 1);
+          hintButtonGraphics.lineStyle(3, 0x219653);
+          hintButtonGraphics.fillRoundedRect(800 - 105, 950 - 31.5, 210, 63, 15);
+          hintButtonGraphics.strokeRoundedRect(800 - 105, 950 - 31.5, 210, 63, 15);
+      });
+      
+      hintButton.on('pointerout', () => {
+          hintButtonGraphics.clear();
+          hintButtonGraphics.fillStyle(0x27ae60, 1);
+          hintButtonGraphics.lineStyle(3, 0x219653);
+          hintButtonGraphics.fillRoundedRect(800 - 100, 950 - 30, 200, 60, 15);
+          hintButtonGraphics.strokeRoundedRect(800 - 100, 950 - 30, 200, 60, 15);
+      });
+      
+      hintButton.on('pointerdown', () => {
+          this.showHint();
       });
   }
 
   createSidekick() {
       // Add sidekick character
-      this.sidekick = this.add.image(200, 900, 'sidekick')
-          .setScale(0.4)
+      this.sidekick = this.add.image(450, 850, 'sidekick')
+          .setScale(0.35)
           .setOrigin(0.5);
       
-      // Add thought bubble
-      this.bubble = this.add.rectangle(300, 800, 380, 150, 0xffffff, 1)
-          .setOrigin(0.5)
-          .setAlpha(0);
+      // Add thought bubble with rounded corners using graphics
+      this.bubbleGraphics = this.add.graphics();
+      this.bubbleGraphics.fillStyle(0xffffff, 1);
+      this.bubbleGraphics.lineStyle(3, 0xbdc3c7);
+      this.bubbleGraphics.fillRoundedRect(520 - 90, 780 - 50, 180, 100, 15);
+      this.bubbleGraphics.strokeRoundedRect(520 - 90, 780 - 50, 180, 100, 15);
+      this.bubbleGraphics.setAlpha(0);
           
-      this.bubbleText = this.add.text(300, 800, '', {
-          font: '28px Arial',
-          fill: '#000000',
+      this.bubbleText = this.add.text(520, 780, '', {
+          font: '20px Arial',
+          fill: '#34495e',
           align: 'center',
-          wordWrap: { width: 340 }
+          wordWrap: { width: 160 }
       }).setOrigin(0.5).setAlpha(0);
-      
-      // Add hint text
-      const hints = [
-          "Think carefully!",
-          "You can do it!",
-          "Remember the patterns we learned!"
-      ];
-      
-      this.add.text(220, 500, Phaser.Utils.Array.GetRandom(hints), {
-          font: '16px Arial',
-          fill: '#000000',
-          align: 'center'
-      }).setOrigin(0.5);
       
       // Add simple animation to sidekick
       this.tweens.add({
           targets: this.sidekick,
-          y: 480,
+          y: '-=20',
           duration: 1500,
           yoyo: true,
           repeat: -1,
           ease: 'Sine.easeInOut'
+      });
+  }
+
+  showHint() {
+      // Show hint based on puzzle type
+      let hintText = "";
+      
+      switch(this.puzzleId) {
+          case 1:
+              hintText = "Multiply the numbers!";
+              break;
+          case 2:
+              hintText = "Add the numerators, keep the denominator!";
+              break;
+          case 3:
+              hintText = "Look for the pattern rule!";
+              break;
+          default:
+              hintText = "Think carefully!";
+      }
+      
+      // Show hint in bubble
+      this.bubbleGraphics.setAlpha(1);
+      this.bubbleText.setText(hintText).setAlpha(1);
+      
+      // Hide after a few seconds
+      this.time.delayedCall(4000, () => {
+          this.bubbleGraphics.setAlpha(0);
+          this.bubbleText.setAlpha(0);
       });
   }
 
@@ -318,11 +414,37 @@ export class PuzzleScene extends Phaser.Scene {
   }
 
   handleCorrectAnswer() {
+      // Create success popup with rounded corners using graphics
+      const successGraphics = this.add.graphics();
+      successGraphics.fillStyle(0x2ecc71, 1);
+      successGraphics.lineStyle(4, 0x27ae60);
+      successGraphics.fillRoundedRect(800 - 250, 600 - 150, 500, 300, 20);
+      successGraphics.strokeRoundedRect(800 - 250, 600 - 150, 500, 300, 20);
+      
       // Show success message
-      const success = this.add.text(800, 400, 'Correct!', {
-          font: '96px Arial',
-          fill: '#00ff00'
+      const success = this.add.text(800, 570, 'Correct!', {
+          font: '64px Arial',
+          fill: '#ffffff',
+          fontWeight: 'bold'
       }).setOrigin(0.5);
+      
+      // Add stars animation
+      for (let i = 0; i < 5; i++) {
+          const star = this.add.star(
+              800 + Phaser.Math.Between(-200, 200),
+              600 + Phaser.Math.Between(-100, 100),
+              5, 20, 40, 0xf1c40f
+          );
+          
+          this.tweens.add({
+              targets: star,
+              angle: 360,
+              scale: { from: 0.5, to: 1 },
+              alpha: { from: 0, to: 1 },
+              duration: 1000,
+              ease: 'Cubic.easeOut'
+          });
+      }
       
       // Update game state
       window.gameState.mathPuzzlesSolved++;
@@ -338,14 +460,32 @@ export class PuzzleScene extends Phaser.Scene {
   }
 
   handleWrongAnswer() {
+      // Create error popup with rounded corners using graphics
+      const errorGraphics = this.add.graphics();
+      errorGraphics.fillStyle(0xe74c3c, 0.9);
+      errorGraphics.lineStyle(4, 0xc0392b);
+      errorGraphics.fillRoundedRect(800 - 200, 600 - 100, 400, 200, 20);
+      errorGraphics.strokeRoundedRect(800 - 200, 600 - 100, 400, 200, 20);
+      
       // Show error message
-      const error = this.add.text(800, 400, 'Try Again!', {
-          font: '96px Arial',
-          fill: '#ff0000'
+      const error = this.add.text(800, 600, 'Try Again!', {
+          font: '48px Arial',
+          fill: '#ffffff',
+          fontWeight: 'bold'
       }).setOrigin(0.5);
+      
+      // Add shake animation
+      this.tweens.add({
+          targets: [errorGraphics, error],
+          x: '+=10',
+          duration: 50,
+          yoyo: true,
+          repeat: 5
+      });
       
       // Remove after a short delay
       this.time.delayedCall(1500, () => {
+          errorGraphics.destroy();
           error.destroy();
       });
   }
@@ -354,8 +494,11 @@ export class PuzzleScene extends Phaser.Scene {
       // Resume the parent scene
       this.scene.resume(this.parentScene);
       
-      // If puzzle was successful, show a message in the parent scene
-      if (success) {
+      // If puzzle was successful, notify the parent scene to hide the tool image
+      if (success && this.parentScene.closePuzzle) {
+          this.parentScene.closePuzzle(this.puzzleId, success);
+      } else if (success) {
+          // Fallback if parent scene doesn't have closePuzzle method
           this.parentScene.showMessage("Puzzle solved! Ship upgrade acquired!");
       }
       

@@ -25,17 +25,16 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
   }
   
   createHoverAnimation() {
-      // Create a simple floating animation - fewer frames, longer duration
+      // Add floating animation
       this.scene.tweens.add({
           targets: this,
-          y: this.y + 10,
-          duration: 2000,
+          y: this.y + 8,
+          duration: 1800,
           yoyo: true,
           repeat: -1,
           ease: 'Sine.easeInOut'
       });
   }
-  
   collect() {
       // Store scene reference before destroying
       const scene = this.scene;

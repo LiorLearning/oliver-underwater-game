@@ -1,8 +1,8 @@
 // Game configuration
 export const config = {
     type: Phaser.AUTO,
-    width: 1600,
-    height: 1200,
+    width: window.innerWidth * (1200 / window.innerHeight), // Width adapts to screen aspect ratio
+    height: 1200, // Fixed height
     parent: 'game-container',
     physics: {
         default: 'arcade',

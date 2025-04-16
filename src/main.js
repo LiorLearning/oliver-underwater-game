@@ -1,12 +1,5 @@
 // Import all game classes and components
 import { config } from './config.js';
-import { AnimationHelper } from './utils/Animation.js';
-import { MathPuzzle } from './utils/MathPuzzle.js';
-import { Player } from './objects/Player.js';
-import { Sidekick } from './objects/Sidekick.js';
-import { Assistant } from './objects/Assistant.js';
-import { Collectible } from './objects/Collectible.js';
-import { Boss } from './objects/Boss.js';
 import { BootScene } from './scenes/BootScene.js';
 import { PreloadScene } from './scenes/PreloadScene.js';
 import { MenuScene } from './scenes/MenuScene.js';
