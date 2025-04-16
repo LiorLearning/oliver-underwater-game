@@ -1,5 +1,5 @@
 // Math puzzle generator utility
-class MathPuzzle {
+export class MathPuzzle {
   constructor(difficulty = 1) {
       this.difficulty = difficulty; // 1-3, affects complexity
       this.puzzleTypes = ['addition', 'subtraction', 'multiplication', 'division', 'fraction', 'pattern'];

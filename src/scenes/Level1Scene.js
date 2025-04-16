@@ -1,4 +1,4 @@
-class Level1Scene extends Phaser.Scene {
+export class Level1Scene extends Phaser.Scene {
   constructor() {
       super('Level1Scene');
       this.player = null;

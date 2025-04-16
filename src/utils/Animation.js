@@ -1,5 +1,5 @@
 // Animation utility class
-class AnimationHelper {
+export class AnimationHelper {
   constructor(scene) {
       this.scene = scene;
   }

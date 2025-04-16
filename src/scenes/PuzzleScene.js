@@ -1,4 +1,4 @@
-class PuzzleScene extends Phaser.Scene {
+export class PuzzleScene extends Phaser.Scene {
   constructor() {
       super('PuzzleScene');
       this.puzzleId = null;
