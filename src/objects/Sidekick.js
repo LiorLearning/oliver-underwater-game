@@ -43,7 +43,7 @@ export class Sidekick extends Phaser.GameObjects.Sprite {
   
   createGlowEffect(scene) {
       // Add a subtle glow around the sidekick
-      const glow = scene.add.sprite(this.x, this.y, texture)
+      const glow = scene.add.sprite(this.x, this.y, 'sidekick')
           .setScale(this.scale * 1.2)
           .setAlpha(0.3)
           .setBlendMode(Phaser.BlendModes.ADD)

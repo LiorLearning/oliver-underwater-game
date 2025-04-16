@@ -69,6 +69,9 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
   }
   
   collect() {
+      // Store scene reference before destroying
+      const scene = this.scene;
+      
       // Create collection animation
       this.scene.tweens.add({
           targets: this,
@@ -78,7 +81,7 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
           ease: 'Back.easeIn',
           onComplete: () => {
               // Create particle effect
-              this.createCollectionParticles();
+              this.createCollectionParticles(scene);
               
               // Remove from scene
               this.destroy();
@@ -86,9 +89,9 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
       });
   }
   
-  createCollectionParticles() {
+  createCollectionParticles(scene) {
       // Create particles when collected
-      const particles = this.scene.add.particles('collectible');
+      const particles = scene.add.particles('collectible');
       
       particles.createEmitter({
           x: this.x,
@@ -102,7 +105,7 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
       });
       
       // Remove particles after they complete
-      this.scene.time.delayedCall(1000, () => {
+      scene.time.delayedCall(1000, () => {
           particles.destroy();
       });
   }

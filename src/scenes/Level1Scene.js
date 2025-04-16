@@ -1,3 +1,8 @@
+import { Collectible } from '../objects/Collectible.js';
+import { Player } from '../objects/Player.js';
+import { Sidekick } from '../objects/Sidekick.js';
+import { Assistant } from '../objects/Assistant.js';
+
 export class Level1Scene extends Phaser.Scene {
   constructor() {
       super('Level1Scene');
