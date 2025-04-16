@@ -1,3 +1,6 @@
+import { Player } from '../objects/Player.js';
+import { Sidekick } from '../objects/Sidekick.js';
+
 export class BossScene extends Phaser.Scene {
   constructor() {
       super('BossScene');

@@ -8,7 +8,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         
         // Set up physics properties
         this.body.setAllowGravity(false); // No gravity underwater
-        this.setCollideWorldBounds(true); // Prevent going off-screen
+        this.setCollideWorldBounds(false); // Allow going off-screen
         this.setDamping(true); // Simulate water resistance
         this.setDrag(0.9); // Water resistance value
         
