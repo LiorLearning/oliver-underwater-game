@@ -1,3 +1,6 @@
+// Import the BossBullet class
+import { BossBullet } from './BossBullet.js';
+
 export class Boss extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y, texture) {
       super(scene, x, y, texture);
@@ -14,15 +17,28 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.setScale(0.4);
       
       // Boss properties
-      this.health = 3;
+      this.health = 100; // New health value
       this.phase = 1;
       this.attackCooldown = false;
+      
+      // Bullet properties
+      this.bullets = scene.physics.add.group({ classType: BossBullet });
+      this.lastBulletTime = 0;
+      this.bulletCooldown = 3000; // Time between bullet patterns in ms
       
       // Create movement pattern
       this.createMovementPattern();
       
       // Glow effect
       this.createGlowEffect();
+      
+      // Start bullet timer
+      this.bulletTimer = scene.time.addEvent({
+          delay: this.bulletCooldown,
+          callback: this.firePattern,
+          callbackScope: this,
+          loop: true
+      });
   }
   
   createMovementPattern() {
@@ -155,9 +171,12 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       });
   }
   
-  takeDamage() {
+  takeDamage(damage) {
+      // Calculate damage (default to 10 if not specified)
+      const damageAmount = damage || 10;
+      
       // Reduce health
-      this.health--;
+      this.health -= damageAmount;
       
       // Visual feedback
       this.setTint(0xff0000);
@@ -173,13 +192,41 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
           }
       });
       
-      // Update phase based on health
-      if (this.health > 0) {
-          this.phase = 4 - this.health; // Phase 2 at 2 health, Phase 3 at 1 health
-          this.createMovementPattern();
-      } else {
+      // Update phase based on health percentage
+      const healthPercent = this.health / 100;
+      
+      if (healthPercent <= 0.3) {
+          this.phase = 3;
+          this.bulletCooldown = 1500; // Faster bullets in phase 3
+          this.updatePhase();
+      } else if (healthPercent <= 0.6) {
+          this.phase = 2;
+          this.bulletCooldown = 2000; // Faster bullets in phase 2
+          this.updatePhase();
+      }
+      
+      // Check if boss is defeated
+      if (this.health <= 0) {
           this.defeat();
       }
+  }
+  
+  updatePhase() {
+      // Update bullet timer
+      if (this.bulletTimer) {
+          this.bulletTimer.remove();
+      }
+      
+      // Create new timer with updated cooldown
+      this.bulletTimer = this.scene.time.addEvent({
+          delay: this.bulletCooldown,
+          callback: this.firePattern,
+          callbackScope: this,
+          loop: true
+      });
+      
+      // Update movement pattern
+      this.createMovementPattern();
   }
   
   defeat() {
@@ -187,6 +234,11 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       if (this.moveTween) this.moveTween.stop();
       if (this.floatTween) this.floatTween.stop();
       if (this.pathTween) this.pathTween.stop();
+      
+      // Stop bullet timer
+      if (this.bulletTimer) {
+          this.bulletTimer.remove();
+      }
       
       // Defeat animation
       this.scene.tweens.add({
@@ -224,95 +276,83 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       });
   }
   
-  attack() {
-      // Different attack patterns based on phase
+  firePattern() {
+      // Choose firing pattern based on current phase
       switch (this.phase) {
           case 1:
-              this.basicAttack();
+              this.fireCirclePattern(8); // 8 bullets in a circle
               break;
           case 2:
-              this.projectileAttack();
+              this.fireCirclePattern(12); // 12 bullets in a circle
               break;
           case 3:
-              this.areaAttack();
+              this.fireCirclePattern(16); // 16 bullets in a circle
+              
+              // Also fire spiral pattern in phase 3
+              this.scene.time.delayedCall(1000, () => {
+                  this.fireSpiralPattern(8);
+              });
               break;
       }
   }
   
-  basicAttack() {
-      // Simple direct attack (for v0, just visual effect)
-      const attackEffect = this.scene.add.sprite(this.x, this.y, 'villain')
-          .setScale(0.2)
-          .setTint(0xff0000)
-          .setAlpha(0.7);
-          
-      // Animate toward player
-      const player = this.scene.player;
+  fireCirclePattern(bulletCount) {
+      // Fire bullets in a circle pattern
+      const angleStep = (Math.PI * 2) / bulletCount;
+      const speed = 150;
       
-      if (player) {
-          this.scene.tweens.add({
-              targets: attackEffect,
-              x: player.x,
-              y: player.y,
-              scale: 0.1,
-              alpha: 0,
-              duration: 500,
-              ease: 'Power1',
-              onComplete: () => {
-                  attackEffect.destroy();
-              }
-          });
-      }
-  }
-  
-  projectileAttack() {
-      // Fire multiple projectiles (for v0, just visual effects)
-      for (let i = 0; i < 5; i++) {
-          const angle = (i / 5) * Math.PI * 2;
-          const xOffset = Math.cos(angle) * 50;
-          const yOffset = Math.sin(angle) * 50;
+      for (let i = 0; i < bulletCount; i++) {
+          const angle = i * angleStep;
           
-          const projectile = this.scene.add.circle(
-              this.x + xOffset,
-              this.y + yOffset,
-              10,
-              0xff0000,
-              1
-          );
+          // Calculate velocity based on angle
+          const velocityX = Math.cos(angle) * speed;
+          const velocityY = Math.sin(angle) * speed;
           
-          // Animate outward
-          this.scene.tweens.add({
-              targets: projectile,
-              x: this.x + xOffset * 10,
-              y: this.y + yOffset * 10,
-              alpha: 0,
-              duration: 1000,
-              ease: 'Linear',
-              onComplete: () => {
-                  projectile.destroy();
-              }
-          });
-      }
-  }
-  
-  areaAttack() {
-      // Area effect attack (for v0, just visual effect)
-      const areaEffect = this.scene.add.circle(this.x, this.y, 20, 0xff0000, 0.7);
-      
-      // Expand and fade
-      this.scene.tweens.add({
-          targets: areaEffect,
-          radius: 200,
-          alpha: 0,
-          duration: 1000,
-          ease: 'Linear',
-          onUpdate: () => {
-              // Need to redraw the circle as it expands
-              areaEffect.setRadius(areaEffect.radius);
-          },
-          onComplete: () => {
-              areaEffect.destroy();
+          // Create bullet
+          if (!this.scene.textures.exists('bossBullet')) {
+              // If bullet texture doesn't exist, create a temporary circle
+              const bullet = new BossBullet(this.scene, this.x, this.y, { x: velocityX, y: velocityY });
+              bullet.setTexture('villain'); // Use villain texture temporarily
+          } else {
+              // Use proper bullet texture
+              const bullet = new BossBullet(this.scene, this.x, this.y, { x: velocityX, y: velocityY });
           }
+      }
+  }
+  
+  fireSpiralPattern(bulletCount) {
+      // Fire bullets in a spiral pattern
+      const angleStep = (Math.PI * 2) / bulletCount;
+      const speed = 150;
+      
+      for (let i = 0; i < bulletCount; i++) {
+          // Delayed firing for spiral effect
+          this.scene.time.delayedCall(i * 100, () => {
+              if (!this.active) return; // Skip if boss is destroyed
+              
+              const angle = i * angleStep;
+              
+              // Calculate velocity based on angle
+              const velocityX = Math.cos(angle) * speed;
+              const velocityY = Math.sin(angle) * speed;
+              
+              // Create bullet
+              if (!this.scene.textures.exists('bossBullet')) {
+                  // If bullet texture doesn't exist, create a temporary circle
+                  const bullet = new BossBullet(this.scene, this.x, this.y, { x: velocityX, y: velocityY });
+                  bullet.setTexture('villain'); // Use villain texture temporarily
+              } else {
+                  // Use proper bullet texture
+                  const bullet = new BossBullet(this.scene, this.x, this.y, { x: velocityX, y: velocityY });
+              }
+          });
+      }
+  }
+  
+  update() {
+      // Update all bullets
+      this.bullets.getChildren().forEach(bullet => {
+          bullet.update();
       });
   }
 }

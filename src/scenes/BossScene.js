@@ -1,5 +1,6 @@
 import { Player } from '../objects/Player.js';
 import { Sidekick } from '../objects/Sidekick.js';
+import { Boss } from '../objects/Boss.js'; // Import the Boss class
 
 export class BossScene extends Phaser.Scene {
   constructor() {
@@ -7,10 +8,10 @@ export class BossScene extends Phaser.Scene {
       this.player = null;
       this.sidekick = null;
       this.boss = null;
-      this.bossHealth = 3; // Number of hits to defeat boss
       this.playerCanAttack = true;
-      this.bossPhase = 1; // Boss has multiple attack patterns
       this.bossAttackTimer = null;
+      this.playerHealth = 100;
+      this.bullets = null;
   }
 
   create() {
@@ -28,9 +29,6 @@ export class BossScene extends Phaser.Scene {
       
       // Start intro sequence
       this.startIntroSequence();
-      
-      // Start boss AI
-      this.startBossAI();
   }
 
   update() {
@@ -46,7 +44,7 @@ export class BossScene extends Phaser.Scene {
       
       // Boss-related updates
       if (this.boss && this.boss.active) {
-          this.updateBoss();
+          this.boss.update();
       }
   }
 
@@ -75,23 +73,27 @@ export class BossScene extends Phaser.Scene {
   }
 
   createBoss() {
-      // Create the boss villain
-      this.boss = this.physics.add.sprite(1200, 600, 'villain').setScale(0.8);
-      
-      // Set up boss animations and behavior
-      this.boss.body.setAllowGravity(false);
+      // Create the boss using our Boss class
+      this.boss = new Boss(this, 1200, 600, 'villain');
       
       // Add health bar for boss
       this.bossHealthBar = this.add.rectangle(1200, 400, 400, 40, 0xff0000);
       
-      // Make boss float up and down
-      this.tweens.add({
-          targets: this.boss,
-          y: 700,
-          duration: 2000,
-          yoyo: true,
-          repeat: -1,
-          ease: 'Sine.easeInOut'
+      // Add health text
+      this.bossHealthText = this.add.text(1200, 400, '100/100', {
+          font: '20px Arial',
+          fill: '#ffffff'
+      }).setOrigin(0.5);
+      
+      // Listen for boss health updates
+      this.events.on('update', () => {
+          if (this.boss && this.boss.active) {
+              // Update health bar width
+              this.bossHealthBar.width = (this.boss.health / 100) * 400;
+              
+              // Update health text
+              this.bossHealthText.setText(`${Math.max(0, this.boss.health)}/100`);
+          }
       });
   }
 
@@ -102,11 +104,38 @@ export class BossScene extends Phaser.Scene {
       // Create sidekick (Blub)
       this.sidekick = new Sidekick(this, 500, 600, 'sidekick');
       
+      // Create player's tool sprite based on selection
+      if (window.gameState.selectedTool) {
+          this.playerTool = this.add.image(this.player.x + 30, this.player.y, window.gameState.selectedTool.image)
+              .setScale(0.2)
+              .setDepth(11);
+          
+          // Follow player
+          this.events.on('update', () => {
+              if (this.player && this.player.active && this.playerTool) {
+                  this.playerTool.x = this.player.x + 30;
+                  this.playerTool.y = this.player.y;
+              }
+          });
+      }
+      
       // Set up collision with boss
       this.physics.add.overlap(
           this.player,
           this.boss,
           this.playerHitBoss,
+          null,
+          this
+      );
+      
+      // Set up player tool to hit boss when close
+      this.input.keyboard.on('keydown-SPACE', this.attackBoss, this);
+      
+      // Set up collision with bullets (added by boss)
+      this.physics.add.collider(
+          this.player,
+          this.boss.bullets,
+          this.playerHitBullet,
           null,
           this
       );
@@ -122,6 +151,12 @@ export class BossScene extends Phaser.Scene {
       // Add player health
       this.playerHealthBar = this.add.rectangle(400, 200, 300, 30, 0x00ff00);
       
+      // Add player health text
+      this.playerHealthText = this.add.text(400, 200, '100/100', {
+          font: '20px Arial',
+          fill: '#ffffff'
+      }).setOrigin(0.5);
+      
       this.add.text(400, 160, 'OLIVER', {
           font: '36px Arial',
           fill: '#ffffff'
@@ -134,6 +169,19 @@ export class BossScene extends Phaser.Scene {
           backgroundColor: '#000000',
           padding: { x: 20, y: 10 }
       }).setOrigin(0.5);
+      
+      // Display equipped tool info
+      if (window.gameState.selectedTool) {
+          this.add.text(400, 240, `Tool: ${window.gameState.selectedTool.name}`, {
+              font: '24px Arial',
+              fill: '#ffff00'
+          }).setOrigin(0.5);
+          
+          this.add.text(400, 270, `Damage: ${window.gameState.selectedTool.strength}`, {
+              font: '20px Arial',
+              fill: '#ffff00'
+          }).setOrigin(0.5);
+      }
       
       // Add special attack button
       this.specialAttackButton = this.add.text(800, 1100, 'SPECIAL ATTACK', {
@@ -201,102 +249,8 @@ export class BossScene extends Phaser.Scene {
           duration: 500,
           ease: 'Power2',
           yoyo: true,
-          hold: 1000,
-          onComplete: () => {
-              // Enable player attack input
-              this.input.keyboard.on('keydown-SPACE', this.attackBoss, this);
-          }
+          hold: 1000
       });
-  }
-
-  startBossAI() {
-      // Set up boss attack pattern
-      this.bossAttackTimer = this.time.addEvent({
-          delay: 3000,
-          callback: this.bossTryAttack,
-          callbackScope: this,
-          loop: true
-      });
-  }
-
-  bossTryAttack() {
-      // Boss attacks differently based on health/phase
-      if (!this.boss || !this.boss.active) return;
-      
-      // Choose attack based on current phase
-      switch(this.bossPhase) {
-          case 1:
-              this.bossAttackDirect();
-              break;
-          case 2:
-              this.bossAttackPattern();
-              break;
-          case 3:
-              this.bossAttackMath();
-              break;
-      }
-  }
-
-  bossAttackDirect() {
-      // Boss charges directly at player
-      this.tweens.add({
-          targets: this.boss,
-          x: this.player.x,
-          y: this.player.y,
-          duration: 1000,
-          ease: 'Power2',
-          onComplete: () => {
-              // Return to original position
-              this.tweens.add({
-                  targets: this.boss,
-                  x: 1200,
-                  y: 600,
-                  duration: 1500,
-                  ease: 'Sine.easeInOut'
-              });
-          }
-      });
-  }
-
-  bossAttackPattern() {
-      // Boss creates a pattern attack
-      // In v0, we'll just show a visual indicator
-      this.add.circle(this.player.x, this.player.y, 50, 0xff0000, 0.3)
-          .setAlpha(0.5);
-          
-      this.tweens.add({
-          targets: this.children.list[this.children.list.length - 1],
-          alpha: 0,
-          scale: 1.5,
-          duration: 1000,
-          ease: 'Power2',
-          onComplete: function(tween, targets) {
-              targets[0].destroy();
-          }
-      });
-  }
-
-  bossAttackMath() {
-      // In final phase, boss uses math attack
-      // For v0, just create a circle pattern
-      for (let i = 0; i < 8; i++) {
-          const angle = (i / 8) * Math.PI * 2;
-          const x = this.boss.x + Math.cos(angle) * 150;
-          const y = this.boss.y + Math.sin(angle) * 150;
-          
-          const projectile = this.add.circle(this.boss.x, this.boss.y, 15, 0xff0000, 1);
-          
-          this.tweens.add({
-              targets: projectile,
-              x: x,
-              y: y,
-              duration: 1000,
-              ease: 'Linear',
-              onComplete: function(tween, targets) {
-                  targets[0].destroy();
-              }
-          });
-      }
   }
 
   attackBoss() {
@@ -316,6 +270,16 @@ export class BossScene extends Phaser.Scene {
           // Visual effect
           this.player.setTint(0xffff00);
           
+          // Tool attack animation
+          if (this.playerTool) {
+              this.tweens.add({
+                  targets: this.playerTool,
+                  angle: 360,
+                  duration: 500,
+                  ease: 'Power1'
+              });
+          }
+          
           // Attack animation
           this.tweens.add({
               targets: this.player,
@@ -331,8 +295,14 @@ export class BossScene extends Phaser.Scene {
                       this.playerCanAttack = true;
                   });
                   
-                  // Damage boss
-                  this.damageTheBoss();
+                  // Damage boss with tool damage
+                  const damage = window.gameState.selectedTool ? 
+                      window.gameState.selectedTool.strength : 10;
+                  
+                  this.boss.takeDamage(damage);
+                  
+                  // Show damage number
+                  this.showDamageNumber(this.boss.x, this.boss.y, damage);
               }
           });
       } else {
@@ -383,100 +353,38 @@ export class BossScene extends Phaser.Scene {
       
       // Damage boss after a delay
       this.time.delayedCall(1000, () => {
-          // Deal extra damage
-          this.damageTheBoss();
-          this.damageTheBoss();
+          // Deal special damage (50% more than tool damage)
+          const baseDamage = window.gameState.selectedTool ? 
+              window.gameState.selectedTool.strength : 10;
+          
+          const specialDamage = Math.floor(baseDamage * 1.5);
+          
+          this.boss.takeDamage(specialDamage);
+          this.showDamageNumber(this.boss.x, this.boss.y, specialDamage, 0x00ffff);
+          
           this.sidekick.clearTint();
       });
   }
 
-  damageTheBoss() {
-      // Reduce boss health
-      this.bossHealth--;
+  showDamageNumber(x, y, amount, color = 0xffff00) {
+      // Create a floating damage number
+      const damageText = this.add.text(x, y, `-${amount}`, {
+          font: '32px Arial',
+          fill: color ? `#${color.toString(16)}` : '#ffff00',
+          stroke: '#000000',
+          strokeThickness: 4
+      }).setOrigin(0.5);
       
-      // Update health bar
-      this.bossHealthBar.width = (this.bossHealth / 3) * 400;
-      
-      // Visual feedback
-      this.boss.setTint(0xff0000);
+      // Animate floating up and fading
       this.tweens.add({
-          targets: this.boss,
-          alpha: 0.7,
-          duration: 100,
-          yoyo: true,
-          repeat: 3,
-          onComplete: () => {
-              this.boss.clearTint();
-              this.boss.setAlpha(1);
-          }
-      });
-      
-      // Check if boss is defeated
-      if (this.bossHealth <= 0) {
-          this.defeatBoss();
-      } else {
-          // Advance to next phase
-          this.bossPhase = 4 - this.bossHealth; // Phase 2 at 2 health, Phase 3 at 1 health
-          this.showMessage(`Boss entering phase ${this.bossPhase}!`);
-      }
-  }
-
-  defeatBoss() {
-      // Stop boss AI
-      if (this.bossAttackTimer) {
-          this.bossAttackTimer.remove();
-      }
-      
-      // Stop player input
-      this.input.keyboard.off('keydown-SPACE', this.attackBoss, this);
-      
-      // Boss defeat animation
-      this.tweens.add({
-          targets: this.boss,
+          targets: damageText,
+          y: y - 50,
           alpha: 0,
-          scale: 1.5,
-          duration: 2000,
-          ease: 'Power2',
-          onComplete: () => {
-              this.boss.destroy();
-              this.showVictoryScreen();
+          duration: 1000,
+          ease: 'Power1',
+          onComplete: function(tween, targets) {
+              targets[0].destroy();
           }
-      });
-  }
-
-  showVictoryScreen() {
-      // Create victory overlay
-      const overlay = this.add.rectangle(800, 600, 1600, 1200, 0x000000, 0.8);
-      
-      // Victory text
-      this.add.text(800, 400, 'VICTORY!', {
-          font: '128px Arial',
-          fill: '#ffff00'
-      }).setOrigin(0.5);
-      
-      // Score display
-      this.add.text(800, 600, `Final Score: ${window.gameState.score + 1000}`, {
-          font: '64px Arial',
-          fill: '#ffffff'
-      }).setOrigin(0.5);
-      
-      // Unlocks
-      this.add.text(800, 700, `Ship Upgrades: ${window.gameState.shipUpgrades.length}`, {
-          font: '48px Arial',
-          fill: '#ffffff'
-      }).setOrigin(0.5);
-      
-      // Continue button
-      const continueButton = this.add.text(800, 900, 'CONTINUE', {
-          font: '64px Arial',
-          fill: '#ffffff',
-          backgroundColor: '#006699',
-          padding: { x: 40, y: 20 }
-      }).setOrigin(0.5).setInteractive();
-      
-      continueButton.on('pointerdown', () => {
-          // In v0, we just return to menu
-          this.scene.start('MenuScene');
       });
   }
 
@@ -490,8 +398,13 @@ export class BossScene extends Phaser.Scene {
       // Visual effect
       player.setTint(0xff0000);
       
-      // Reduce health bar
-      this.playerHealthBar.width = Math.max(0, this.playerHealthBar.width - 30);
+      // Reduce player health
+      this.playerHealth -= 10;
+      this.playerHealth = Math.max(0, this.playerHealth);
+      
+      // Update health display
+      this.playerHealthBar.width = (this.playerHealth / 100) * 300;
+      this.playerHealthText.setText(`${this.playerHealth}/100`);
       
       // Knockback effect
       this.tweens.add({
@@ -509,14 +422,80 @@ export class BossScene extends Phaser.Scene {
       });
       
       // Game over if health is zero
-      if (this.playerHealthBar.width <= 0) {
+      if (this.playerHealth <= 0) {
+          this.gameOver();
+      }
+  }
+
+  playerHitBullet(player, bullet) {
+      // Only trigger if not recently hit
+      if (this.playerInvulnerable) return;
+      
+      // Player takes damage
+      this.playerInvulnerable = true;
+      
+      // Visual effect
+      player.setTint(0xff0000);
+      
+      // Reduce player health
+      this.playerHealth -= bullet.damage || 5;
+      this.playerHealth = Math.max(0, this.playerHealth);
+      
+      // Update health display
+      this.playerHealthBar.width = (this.playerHealth / 100) * 300;
+      this.playerHealthText.setText(`${this.playerHealth}/100`);
+      
+      // Show damage number
+      this.showDamageNumber(player.x, player.y, bullet.damage || 5, 0xff0000);
+      
+      // Destroy bullet
+      bullet.destroy();
+      
+      // Invulnerability period
+      this.time.delayedCall(1000, () => {
+          player.clearTint();
+          this.playerInvulnerable = false;
+      });
+      
+      // Game over if health is zero
+      if (this.playerHealth <= 0) {
           this.gameOver();
       }
   }
 
   gameOver() {
       // Game over handling
-      this.scene.start('MenuScene');
+      this.input.keyboard.off('keydown-SPACE', this.attackBoss, this);
+      
+      // Show game over text
+      const gameOverText = this.add.text(800, 600, 'GAME OVER', {
+          font: '128px Arial',
+          fill: '#ff0000',
+          stroke: '#000000',
+          strokeThickness: 10
+      }).setOrigin(0.5).setAlpha(0);
+      
+      // Fade in game over text
+      this.tweens.add({
+          targets: gameOverText,
+          alpha: 1,
+          duration: 2000,
+          ease: 'Power2',
+          onComplete: () => {
+              // Add retry button
+              const retryButton = this.add.text(800, 800, 'RETRY', {
+                  font: '64px Arial',
+                  fill: '#ffffff',
+                  backgroundColor: '#880000',
+                  padding: { x: 40, y: 20 }
+              }).setOrigin(0.5).setInteractive();
+              
+              retryButton.on('pointerdown', () => {
+                  // Return to menu
+                  this.scene.start('MenuScene');
+              });
+          }
+      });
   }
 
   showMessage(text) {
@@ -532,9 +511,5 @@ export class BossScene extends Phaser.Scene {
       this.time.delayedCall(3000, () => {
           message.destroy();
       });
-  }
-
-  updateBoss() {
-      // Additional boss behavior (empty in v0)
   }
 }

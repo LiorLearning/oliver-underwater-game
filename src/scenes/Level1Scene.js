@@ -321,9 +321,19 @@ export class Level1Scene extends Phaser.Scene {
           return;
       }
       
-      // Trigger boss battle
+      // Show message about preparing for battle
+      this.showMessage("Prepare for battle! Choose your tool wisely!");
+      
+      // Trigger tool selection screen instead of boss battle directly
       this.bossTriggered = true;
-      this.scene.start('BossScene');
+      
+      // Give player some coins if they don't have enough
+      if (window.gameState.score < 50) {
+          window.gameState.score = 50; // Minimum coins to buy at least the basic tool
+      }
+      
+      // Start the tool selection scene
+      this.scene.start('ToolSelectScene');
   }
 
   showMessage(text) {

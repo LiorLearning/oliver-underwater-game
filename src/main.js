@@ -6,6 +6,7 @@ import { MenuScene } from './scenes/MenuScene.js';
 import { Level1Scene } from './scenes/Level1Scene.js';
 import { PuzzleScene } from './scenes/PuzzleScene.js';
 import { BossScene } from './scenes/BossScene.js';
+import { ToolSelectScene } from './scenes/ToolSelectScene.js';
 
 // Wait for DOM to be ready
 window.onload = function() {
@@ -18,6 +19,7 @@ window.onload = function() {
             MenuScene,
             Level1Scene,
             PuzzleScene,
+            ToolSelectScene,
             BossScene
         ]
     };
@@ -35,6 +37,7 @@ window.onload = function() {
         collectedItems: 0,
         requiredItems: 3,
         mathPuzzlesSolved: 0,
-        shipUpgrades: []
+        shipUpgrades: [],
+        selectedTool: null
     };
 };

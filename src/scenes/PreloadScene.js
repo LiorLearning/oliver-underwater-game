@@ -14,6 +14,9 @@ export class PreloadScene extends Phaser.Scene {
       // Create animations
       this.createAnimations();
       
+      // Create bullet texture
+      this.createBulletTexture();
+      
       // Start with the menu scene
       this.scene.start('MenuScene');
   }
@@ -51,5 +54,24 @@ export class PreloadScene extends Phaser.Scene {
   createAnimations() {
       // In v0, we're using static images
       // Animations would be created here in future versions
+  }
+  
+  createBulletTexture() {
+      // Create a custom bullet texture programmatically
+      const graphics = this.add.graphics();
+      
+      // Draw red bullet with glow effect
+      graphics.fillStyle(0xff0000, 1);
+      graphics.fillCircle(15, 15, 8);
+      
+      // Add some details to make it look like energy
+      graphics.fillStyle(0xffff00, 0.8);
+      graphics.fillCircle(15, 15, 4);
+      
+      // Create texture from graphics
+      graphics.generateTexture('bossBullet', 30, 30);
+      
+      // Clean up graphics object
+      graphics.destroy();
   }
 }
