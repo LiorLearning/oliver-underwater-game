@@ -1,21 +1,23 @@
 // Game configuration
 export const config = {
     type: Phaser.AUTO,
-    width: window.innerWidth * (1200 / window.innerHeight), // Width adapts to screen aspect ratio
-    height: 1200, // Fixed height
+    width: 1600,
+    height: 900,
     parent: 'game-container',
+    backgroundColor: '#000000',
     physics: {
         default: 'arcade',
         arcade: {
-            gravity: { y: 100 }, // Light gravity for underwater effect
+            gravity: { y: 0 },
             debug: false
         }
     },
-    // Scenes will be added in main.js
-    pixelArt: false,
-    backgroundColor: '#0a2239', // Deep blue ocean color
     scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH
-    }
+    },
+    pixelArt: false,
+    roundPixels: true,
+    title: 'Maze Challenge',
+    version: '1.0'
 };

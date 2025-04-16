@@ -4,74 +4,118 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   preload() {
-      // Load game assets
+      // Display loading progress
+      this.createLoadingBar();
+      
+      // Load all game assets
       this.loadImages();
       this.loadSpritesheets();
       this.loadAudio();
+      
+      // Font loading
+      this.loadFonts();
   }
 
   create() {
-      // Create animations
-      this.createAnimations();
+      // Initialize game state
+      window.gameState = {
+          score: 0,
+          health: 100,
+          collectedTools: []
+      };
       
-      // Create bullet texture
-      this.createBulletTexture();
-      
-      // Start with the menu scene
+      // Go to menu scene
       this.scene.start('MenuScene');
   }
 
+  createLoadingBar() {
+      // Create a loading bar
+      const width = this.cameras.main.width;
+      const height = this.cameras.main.height;
+      
+      // Progress bar background
+      const progressBarBg = this.add.rectangle(width / 2, height / 2, 400, 30, 0x222222);
+      
+      // Progress bar
+      const progressBar = this.add.rectangle(
+          width / 2 - 195, 
+          height / 2, 
+          10, 
+          20, 
+          0x00ff00
+      ).setOrigin(0, 0.5);
+      
+      // Loading text
+      const loadingText = this.add.text(
+          width / 2, 
+          height / 2 - 50,
+          'Loading...', 
+          { 
+              font: '24px Arial',
+              fill: '#ffffff' 
+          }
+      ).setOrigin(0.5);
+      
+      // Update progress bar as assets load
+      this.load.on('progress', (value) => {
+          // Resize progress bar based on load progress
+          progressBar.width = 390 * value;
+      });
+      
+      // Remove progress bar when done
+      this.load.on('complete', () => {
+          progressBar.destroy();
+          progressBarBg.destroy();
+          loadingText.destroy();
+      });
+  }
+
   loadImages() {
-      // Background
+      // Background 
       this.load.image('bg', 'assets/images/bg.png');
       
-      // Characters
-      this.load.image('hero', 'assets/images/hero.png');  
-      this.load.image('villain', 'assets/images/villain.png');
-      this.load.image('sidekick', 'assets/images/sidekick.png');
-      this.load.image('assistant', 'assets/images/assistant.png');
+      // Game objects
+      this.load.image('wall', 'assets/images/wall.png');
+      this.load.image('collectible', 'assets/images/collectible.png');
+      this.load.image('exit', 'assets/images/exit.png');
+      this.load.image('particle', 'assets/images/collectible.png'); // Using collectible as particle
       
       // UI elements
       this.load.image('button', 'assets/images/button.png');
-      this.load.image('collectible', 'assets/images/collectible.png');
       
-      // Tool images
+      // Tools
       this.load.image('wrench', 'assets/images/wrench.png');
       this.load.image('hammer', 'assets/images/hammer.png');
       this.load.image('screwdriver', 'assets/images/screwdriver.png');
   }
 
   loadSpritesheets() {
-      // If we have animation frames, we would load spritesheets here
-      // For v0, we're using static images
+      // Load the hero directly as an image if we have no spritesheet
+      this.load.image('hero', 'assets/images/hero.png');
+      
+      // Load the assistant directly as an image
+      this.load.image('assistant', 'assets/images/assistant.png');
+      
+      // Load boss image
+      this.load.image('boss', 'assets/images/villain.png');
   }
 
   loadAudio() {
-      // In v0, we're focusing on visual elements only
-      // Audio files would be loaded here in future versions
+      // Audio will be loaded in a future version
+      // Currently commented to avoid errors if files don't exist
+      
+      // // Sound effects
+      // this.load.audio('collect', 'assets/audio/collect.mp3');
+      // this.load.audio('hit', 'assets/audio/hit.mp3');
+      // this.load.audio('win', 'assets/audio/win.mp3');
+      // this.load.audio('lose', 'assets/audio/lose.mp3');
+      
+      // // Music
+      // this.load.audio('theme', 'assets/audio/theme.mp3');
+      // this.load.audio('boss_theme', 'assets/audio/boss_theme.mp3');
   }
 
-  createAnimations() {
-      // In v0, we're using static images
-      // Animations would be created here in future versions
-  }
-  
-  createBulletTexture() {
-      // Create a custom bullet texture programmatically
-      const graphics = this.add.graphics();
-      
-      // Draw red bullet with glow effect
-      graphics.fillStyle(0xff0000, 1);
-      graphics.fillCircle(15, 15, 8);
-      
-      // Add some details to make it look like energy
-      graphics.fillStyle(0xffff00, 0.8);
-      graphics.fillCircle(15, 15, 4);
-      
-      // Create texture from graphics
-      graphics.generateTexture('bossBullet', 30, 30);
-      
-      // Clean up graphics object
-      graphics.destroy();
+  loadFonts() {
+      // No custom fonts for now, using system fonts
   }
 }

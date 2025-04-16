@@ -12,8 +12,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.setDamping(true); // Simulate water resistance
         this.setDrag(0.9); // Water resistance value
         
-        // Set scale
+        // Set scale and make sure player is visible
         this.setScale(0.6);
+        this.setDepth(10);
         
         // Movement properties
         this.moveSpeed = 400;
@@ -24,6 +25,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         
         // Bubble trail particles
         this.createBubbleTrail(scene);
+
+        // Player health properties - now using the global gameState
+        this.maxHealth = 100;
+        this.health = window.gameState.health;
+        this.invulnerable = false;
+        this.invulnerableTime = 1000; // ms
     }
     
     update() {
@@ -68,7 +75,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     
     createBubbleTrail(scene) {
         // Create bubble emitter for underwater effect
-        this.bubbleEmitter = scene.add.particles('sidekick').createEmitter({
+        this.bubbleEmitter = scene.add.particles('particle').createEmitter({
             speed: { min: 20, max: 60 },
             scale: { start: 0.1, end: 0.02 },
             alpha: { start: 0.5, end: 0 },
@@ -98,13 +105,51 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
     }
     
-    takeDamage() {
+    takeDamage(amount = 10) {
+        // Check if player is currently invulnerable
+        if (this.invulnerable) return;
+        
+        // Apply damage to global health
+        window.gameState.health = Math.max(0, window.gameState.health - amount);
+        this.health = window.gameState.health;
+        
         // Flash red when taking damage
         this.setTint(0xff0000);
+        
+        // Set invulnerable briefly
+        this.invulnerable = true;
+        
+        // Clear tint and reset invulnerability after a delay
+        this.scene.time.delayedCall(this.invulnerableTime, () => {
+            this.clearTint();
+            this.invulnerable = false;
+        });
+        
+        // Check if health is depleted
+        if (window.gameState.health <= 0) {
+            this.die();
+        }
+    }
+    
+    heal(amount = 10) {
+        // Increase health but don't exceed max
+        window.gameState.health = Math.min(this.maxHealth, window.gameState.health + amount);
+        this.health = window.gameState.health;
+        
+        // Flash green to indicate healing
+        this.setTint(0x00ff00);
         
         // Clear tint after a delay
         this.scene.time.delayedCall(500, () => {
             this.clearTint();
+        });
+    }
+    
+    die() {
+        // Player death logic
+        this.scene.time.delayedCall(500, () => {
+            // Restart the level
+            this.scene.scene.restart();
         });
     }
 }

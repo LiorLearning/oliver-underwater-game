@@ -5,58 +5,129 @@ export class MenuScene extends Phaser.Scene {
 
   create() {
       // Add background
-      const { width, height } = this.sys.game.config;
-      this.add.image(0, 0, 'bg')
+      this.bg = this.add.image(0, 0, 'bg')
           .setOrigin(0, 0)
-          .setDisplaySize(width, height);
+          .setDisplaySize(this.cameras.main.width, this.cameras.main.height);
       
-      // Add title text
-      this.add.text(800, 300, 'Oliver: Depths of the Neon Sea', {
-          font: '64px Arial',
-          fill: '#ffffff',
-          align: 'center'
-      }).setOrigin(0.5);
+      // Add title
+      this.createTitle();
       
-      // Create start button
-      const startButton = this.add.text(800, 600, 'Start Game', {
-          font: '48px Arial',
-          fill: '#ffffff',
-          backgroundColor: '#006699',
-          padding: { x: 40, y: 20 }
-      }).setOrigin(0.5).setInteractive();
+      // Add start button
+      this.createStartButton();
       
-      // Button hover effect
-      startButton.on('pointerover', () => {
-          startButton.setBackgroundColor('#0088cc');
-      });
+      // Add background music
+    //   this.sound.play('theme', {
+    //       loop: true,
+    //       volume: 0.5
+    //   });
+  }
+  
+  createTitle() {
+      // Create title text
+      const title = this.add.text(
+          this.cameras.main.width / 2,
+          this.cameras.main.height / 3,
+          'MAZE CHALLENGE',
+          {
+              font: '64px Arial',
+              fill: '#ffffff',
+              stroke: '#000000',
+              strokeThickness: 8,
+              shadow: { offsetX: 2, offsetY: 2, color: '#000', blur: 5, stroke: true, fill: true }
+          }
+      ).setOrigin(0.5);
       
-      startButton.on('pointerout', () => {
-          startButton.setBackgroundColor('#006699');
-      });
+      // Add subtitle
+      this.add.text(
+          this.cameras.main.width / 2,
+          this.cameras.main.height / 3 + 80,
+          'Collect Tools and Avoid Enemies!',
+          {
+              font: '28px Arial',
+              fill: '#ffffff',
+              stroke: '#000000',
+              strokeThickness: 4
+          }
+      ).setOrigin(0.5);
       
-      // Start the game when clicked
-      startButton.on('pointerdown', () => {
-          this.scene.start('Level1Scene');
-      });
-      
-      // Add instructions
-      this.add.text(800, 800, 'Collect items, solve puzzles, defeat the boss!', {
-          font: '36px Arial',
-          fill: '#ffffff'
-      }).setOrigin(0.5);
-      
-      // Show character preview
-      const hero = this.add.image(400, 1000, 'hero').setScale(0.6);
-      const sidekick = this.add.image(600, 1000, 'sidekick').setScale(0.4);
-      
-      // Add simple animation to characters
+      // Add a pulsing animation to the title
       this.tweens.add({
-          targets: [hero, sidekick],
-          y: 960,
+          targets: title,
+          scale: 1.1,
           duration: 1500,
           yoyo: true,
           repeat: -1,
           ease: 'Sine.easeInOut'
       });
+  }
+  
+  createStartButton() {
+      // Create start button
+      const button = this.add.rectangle(
+          this.cameras.main.width / 2,
+          this.cameras.main.height / 2 + 150,
+          250,
+          80,
+          0x009900
+      ).setInteractive();
+      
+      // Add button text
+      const buttonText = this.add.text(
+          this.cameras.main.width / 2,
+          this.cameras.main.height / 2 + 150,
+          'START GAME',
+          {
+              font: '32px Arial',
+              fill: '#ffffff'
+          }
+      ).setOrigin(0.5);
+      
+      // Add button hover effect
+      button.on('pointerover', () => {
+          button.fillColor = 0x00cc00;
+          buttonText.setScale(1.1);
+      });
+      
+      button.on('pointerout', () => {
+          button.fillColor = 0x009900;
+          buttonText.setScale(1);
+      });
+      
+      // Add button click action
+      button.on('pointerdown', () => {
+          // Flash button
+          this.tweens.add({
+              targets: [button, buttonText],
+              alpha: 0.5,
+              duration: 100,
+              yoyo: true,
+              onComplete: () => {
+                  // Play sound effect
+                //   this.sound.play('collect');
+                  
+                  // Fade out to game
+                  this.cameras.main.fade(500, 0, 0, 0);
+                  this.cameras.main.once('camerafadeoutcomplete', () => {
+                      // Stop menu music
+                      this.sound.stopAll();
+                      
+                      // Start game
+                      this.scene.start('Level1Scene');
+                  });
+              }
+          });
+      });
+      
+      // Add instructions text below button
+      this.add.text(
+          this.cameras.main.width / 2,
+          this.cameras.main.height / 2 + 250,
+          'Arrow keys to move\nFind all tools to unlock the exit',
+          {
+              font: '20px Arial',
+              fill: '#ffffff',
+              align: 'center'
+          }
+      ).setOrigin(0.5);
   }
 }

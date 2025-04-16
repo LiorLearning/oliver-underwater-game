@@ -7,136 +7,154 @@ export class Assistant extends Phaser.Physics.Arcade.Sprite {
       scene.physics.add.existing(this);
       
       // Set physics properties
-      this.body.setAllowGravity(false);
-      this.body.setImmovable(true);
+      this.body.setAllowGravity(false); // No gravity underwater
+      this.setBounce(1); // Bounce off walls
+      this.setCollideWorldBounds(true); // Stay within world bounds
+      this.body.setImmovable(false); // Can be pushed by player
       
       // Set scale
-      this.setScale(0.3);
+      this.setScale(0.5);
+      this.setDepth(5); // Above background, below player
       
-      // State tracking
-      this.hasInteracted = false;
-      this.isHelping = false;
+      // Enemy properties
+      this.moveSpeed = 100;
+      this.damage = 10;
+      this.health = 30;
+      this.isDead = false;
       
-      // Hover animation
-      this.createHoverAnimation();
+      // Movement AI
+      this.direction = new Phaser.Math.Vector2(
+          Phaser.Math.Between(-1, 1),
+          Phaser.Math.Between(-1, 1)
+      ).normalize();
       
-      // Interaction indicator
-      this.createInteractionIndicator();
+      // Random direction change
+      this.directionChangeTime = 0;
+      this.directionChangeCooldown = Phaser.Math.Between(2000, 5000);
+      
+      // Stuck detection
+      this.stuckCheckInterval = 1000;
+      this.lastPosition = new Phaser.Math.Vector2(x, y);
+      this.lastPositionTime = 0;
+      this.stuckDistance = 10;
+      
+      // Set tint to make them look more threatening
+      this.setTint(0xff0000);
   }
   
-  update() {
-      // Update interaction indicator position
-      if (this.interactionIndicator) {
-          this.interactionIndicator.setPosition(this.x, this.y - 80);
+  update(time) {
+      if (this.isDead) return;
+      
+      // Move in current direction
+      this.moveInDirection();
+      
+      // Random direction change
+      this.handleDirectionChange(time);
+      
+      // Check if stuck
+      this.checkIfStuck(time);
+  }
+  
+  moveInDirection() {
+      // Move based on current direction
+      const velocity = this.direction.clone().scale(this.moveSpeed);
+      this.body.setVelocity(velocity.x, velocity.y);
+      
+      // Flip sprite based on movement
+      if (velocity.x < 0) {
+          this.setFlipX(true);
+      } else if (velocity.x > 0) {
+          this.setFlipX(false);
       }
   }
   
-  createHoverAnimation() {
-      // Create a simple hovering animation
+  handleDirectionChange(time) {
+      // Change direction randomly
+      if (time > this.directionChangeTime) {
+          this.changeDirection();
+          this.directionChangeTime = time + this.directionChangeCooldown;
+          this.directionChangeCooldown = Phaser.Math.Between(2000, 5000);
+      }
+  }
+  
+  changeDirection() {
+      // Get a new random direction
+      this.direction = new Phaser.Math.Vector2(
+          Phaser.Math.Between(-10, 10) / 10,
+          Phaser.Math.Between(-10, 10) / 10
+      ).normalize();
+  }
+  
+  checkIfStuck(time) {
+      // Check if assistant is stuck (not moving)
+      if (time > this.lastPositionTime + this.stuckCheckInterval) {
+          const distance = Phaser.Math.Distance.Between(
+              this.x, this.y, 
+              this.lastPosition.x, this.lastPosition.y
+          );
+          
+          // If barely moved, change direction
+          if (distance < this.stuckDistance) {
+              this.changeDirection();
+          }
+          
+          // Update last position
+          this.lastPosition.set(this.x, this.y);
+          this.lastPositionTime = time;
+      }
+  }
+  
+  hitPlayer(player) {
+      // Do damage to player if alive
+      if (!this.isDead) {
+          player.takeDamage(this.damage);
+      }
+  }
+  
+  takeDamage(amount = 10) {
+      // Reduce health
+      this.health -= amount;
+      
+      // Flash red
+      this.setTint(0xff0000);
+      this.scene.time.delayedCall(200, () => {
+          this.clearTint();
+      });
+      
+      // Check if health depleted
+      if (this.health <= 0 && !this.isDead) {
+          this.die();
+      }
+  }
+  
+  die() {
+      this.isDead = true;
+      
+      // Death animation
       this.scene.tweens.add({
           targets: this,
-          y: this.y + 20,
-          duration: 3000,
-          yoyo: true,
-          repeat: -1,
-          ease: 'Sine.easeInOut'
-      });
-  }
-  
-  createInteractionIndicator() {
-      // Create an indicator showing the assistant can be interacted with
-      this.interactionIndicator = this.scene.add.text(this.x, this.y - 80, '?', {
-          font: '40px Arial',
-          fill: '#ffffff'
-      }).setOrigin(0.5);
-      
-      // Add a simple pulsing animation
-      this.scene.tweens.add({
-          targets: this.interactionIndicator,
-          scale: 1.2,
-          duration: 1500,
-          yoyo: true,
-          repeat: -1,
-          ease: 'Sine.easeInOut'
-      });
-  }
-  
-  interact() {
-      // Mark as interacted
-      this.hasInteracted = true;
-      
-      // Remove interaction indicator
-      if (this.interactionIndicator) {
-          this.interactionIndicator.destroy();
-          this.interactionIndicator = null;
-      }
-      
-      // Play interaction animation
-      this.scene.tweens.add({
-          targets: this,
-          scale: this.scale * 1.3,
-          duration: 200,
-          yoyo: true,
-          repeat: 1,
-          ease: 'Sine.easeInOut'
+          alpha: 0,
+          angle: this.angle + 540,
+          scale: 0.1,
+          duration: 800,
+          ease: 'Back.easeIn',
+          onComplete: () => {
+              this.destroy();
+          }
       });
       
-      // Return to player after a delay
-      this.scene.time.delayedCall(5000, () => {
-          this.followPlayer();
+      // Create particles for death effect
+      const particles = this.scene.add.particles(this.x, this.y, 'particle', {
+          speed: { min: 50, max: 200 },
+          scale: { start: 0.5, end: 0 },
+          lifespan: 800,
+          blendMode: 'ADD',
+          quantity: 20
       });
-  }
-  
-  followPlayer() {
-      // Once interacted, begin following the player
-      if (!this.isHelping) {
-          this.isHelping = true;
-          
-          // Get player reference
-          const player = this.scene.player;
-          
-          // Start following animation with longer duration
-          this.followTween = this.scene.tweens.add({
-              targets: this,
-              x: player.x + Phaser.Math.Between(-200, 200),
-              y: player.y + Phaser.Math.Between(-200, 200),
-              duration: 3000,
-              ease: 'Sine.easeInOut',
-              onComplete: () => {
-                  // Continue following at random offsets with longer delay
-                  if (this.isHelping && player) {
-                      this.scene.time.delayedCall(2000, () => {
-                          this.followPlayer();
-                      });
-                  }
-              }
-          });
-      }
-  }
-  
-  provideHint() {
-      // Display a hint bubble
-      const hints = [
-          "Remember to solve all puzzles!",
-          "Collect items to power your ship!",
-          "Use math to overcome obstacles!"
-      ];
       
-      const hint = Phaser.Utils.Array.GetRandom(hints);
-      
-      // Create hint bubble
-      const bubble = this.scene.add.rectangle(this.x, this.y - 100, hint.length * 14 + 40, 80, 0xffffff, 1)
-          .setOrigin(0.5);
-          
-      const text = this.scene.add.text(this.x, this.y - 100, hint, {
-          font: '28px Arial',
-          fill: '#000000'
-      }).setOrigin(0.5);
-      
-      // Remove after delay
-      this.scene.time.delayedCall(3000, () => {
-          bubble.destroy();
-          text.destroy();
+      // Auto-destroy particles after they're done
+      this.scene.time.delayedCall(800, () => {
+          particles.destroy();
       });
   }
 }

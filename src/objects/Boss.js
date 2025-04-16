@@ -5,7 +5,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y, texture) {
       super(scene, x, y, texture);
       
-      // Add boss to scene
+      // Add to scene and physics
       scene.add.existing(this);
       scene.physics.add.existing(this);
       
@@ -14,345 +14,273 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.body.setImmovable(true);
       
       // Set scale
-      this.setScale(0.4);
+      this.setScale(1.2);
       
-      // Boss properties
-      this.health = 100; // New health value
-      this.phase = 1;
+      // Boss stats
+      this.health = 100;
+      this.maxHealth = 100;
+      
+      // Attack properties
       this.attackCooldown = false;
+      this.attackInterval = 2000; // ms
+      this.bulletSpeed = 300;
+      this.bulletDamage = 10;
       
-      // Bullet properties
-      this.bullets = scene.physics.add.group({ classType: BossBullet });
-      this.lastBulletTime = 0;
-      this.bulletCooldown = 3000; // Time between bullet patterns in ms
+      // Create bullet group
+      this.bullets = scene.physics.add.group();
       
-      // Create movement pattern
-      this.createMovementPattern();
-      
-      // Glow effect
-      this.createGlowEffect();
-      
-      // Start bullet timer
-      this.bulletTimer = scene.time.addEvent({
-          delay: this.bulletCooldown,
-          callback: this.firePattern,
-          callbackScope: this,
-          loop: true
-      });
-  }
-  
-  createMovementPattern() {
-      // Create a movement pattern based on current phase
-      switch (this.phase) {
-          case 1:
-              this.patternPhaseOne();
-              break;
-          case 2:
-              this.patternPhaseTwo();
-              break;
-          case 3:
-              this.patternPhaseThree();
-              break;
-      }
-  }
-  
-  patternPhaseOne() {
-      // Phase 1: Simple side-to-side movement
-      this.moveTween = this.scene.tweens.add({
-          targets: this,
-          x: this.x + 200,
-          duration: 3000,
-          yoyo: true,
-          repeat: -1,
-          ease: 'Sine.easeInOut'
-      });
-      
-      // Slight up and down movement
-      this.floatTween = this.scene.tweens.add({
-          targets: this,
-          y: this.y + 50,
-          duration: 5000,
-          yoyo: true,
-          repeat: -1,
-          ease: 'Sine.easeInOut'
-      });
-  }
-  
-  patternPhaseTwo() {
-      // Phase 2: Circular movement
-      // Stop previous tweens
-      if (this.moveTween) this.moveTween.stop();
-      if (this.floatTween) this.floatTween.stop();
-      
-      // Create path for circular movement
-      const path = new Phaser.Curves.Path(this.x, this.y);
-      path.ellipseTo(150, 100, 0, 360, false);
-      
-      // Follow path
-      this.pathTween = this.scene.tweens.add({
-          targets: this,
-          z: 1, // Dummy property to track progress
-          duration: 5000,
-          repeat: -1,
-          ease: 'Linear',
-          onUpdate: (tween) => {
-              const point = path.getPoint(tween.progress);
-              this.x = point.x;
-              this.y = point.y;
-          }
-      });
-  }
-  
-  patternPhaseThree() {
-      // Phase 3: Aggressive movement toward player
-      // Stop previous tweens
-      if (this.moveTween) this.moveTween.stop();
-      if (this.floatTween) this.floatTween.stop();
-      if (this.pathTween) this.pathTween.stop();
-      
-      // Erratic movement
-      this.scene.time.addEvent({
-          delay: 2000,
-          callback: this.moveTowardPlayer,
-          callbackScope: this,
-          loop: true
-      });
-  }
-  
-  moveTowardPlayer() {
-      // Get player reference
-      const player = this.scene.player;
-      
-      if (player && !this.attackCooldown) {
-          // Set attack cooldown
-          this.attackCooldown = true;
-          
-          // Move toward player
-          this.scene.tweens.add({
-              targets: this,
-              x: player.x,
-              y: player.y,
-              duration: 1500,
-              ease: 'Power2',
-              onComplete: () => {
-                  // Return to center
-                  this.scene.tweens.add({
-                      targets: this,
-                      x: 600,
-                      y: 300,
-                      duration: 2000,
-                      ease: 'Sine.easeInOut',
-                      onComplete: () => {
-                          // Reset cooldown
-                          this.attackCooldown = false;
-                      }
-                  });
-              }
-          });
-      }
-  }
-  
-  createGlowEffect() {
-      // Add a menacing glow effect
-      const glow = this.scene.add.sprite(this.x, this.y, 'villain')
-          .setScale(this.scale * 1.1)
-          .setAlpha(0.3)
-          .setBlendMode(Phaser.BlendModes.ADD)
-          .setTint(0xff0000);
-          
-      // Link the glow effect to the boss
-      this.on('destroy', () => {
-          glow.destroy();
-      });
-      
-      // Update glow position
-      this.scene.events.on('update', () => {
-          glow.setPosition(this.x, this.y);
-      });
-  }
-  
-  takeDamage(damage) {
-      // Calculate damage (default to 10 if not specified)
-      const damageAmount = damage || 10;
-      
-      // Reduce health
-      this.health -= damageAmount;
-      
-      // Visual feedback
+      // Tint to make more menacing
       this.setTint(0xff0000);
-      this.scene.tweens.add({
-          targets: this,
-          alpha: 0.7,
-          duration: 100,
-          yoyo: true,
-          repeat: 5,
-          onComplete: () => {
-              this.clearTint();
-              this.setAlpha(1);
-          }
-      });
       
-      // Update phase based on health percentage
-      const healthPercent = this.health / 100;
+      // Add hover animation
+      this.createHoverAnimation();
       
-      if (healthPercent <= 0.3) {
-          this.phase = 3;
-          this.bulletCooldown = 1500; // Faster bullets in phase 3
-          this.updatePhase();
-      } else if (healthPercent <= 0.6) {
-          this.phase = 2;
-          this.bulletCooldown = 2000; // Faster bullets in phase 2
-          this.updatePhase();
-      }
+      // Add attack pattern
+      this.attackPatterns = [
+          this.shootProjectile.bind(this),
+          this.shootSpreadProjectiles.bind(this),
+          this.chargeDash.bind(this)
+      ];
       
-      // Check if boss is defeated
-      if (this.health <= 0) {
-          this.defeat();
-      }
-  }
-  
-  updatePhase() {
-      // Update bullet timer
-      if (this.bulletTimer) {
-          this.bulletTimer.remove();
-      }
-      
-      // Create new timer with updated cooldown
-      this.bulletTimer = this.scene.time.addEvent({
-          delay: this.bulletCooldown,
-          callback: this.firePattern,
-          callbackScope: this,
-          loop: true
-      });
-      
-      // Update movement pattern
-      this.createMovementPattern();
-  }
-  
-  defeat() {
-      // Stop all movement
-      if (this.moveTween) this.moveTween.stop();
-      if (this.floatTween) this.floatTween.stop();
-      if (this.pathTween) this.pathTween.stop();
-      
-      // Stop bullet timer
-      if (this.bulletTimer) {
-          this.bulletTimer.remove();
-      }
-      
-      // Defeat animation
-      this.scene.tweens.add({
-          targets: this,
-          alpha: 0,
-          scale: 1.5,
-          rotation: 2 * Math.PI,
-          duration: 2000,
-          ease: 'Power2',
-          onComplete: () => {
-              this.createDefeatEffect();
-              this.destroy();
-          }
-      });
-  }
-  
-  createDefeatEffect() {
-      // Create explosion effect
-      const particles = this.scene.add.particles('villain');
-      
-      particles.createEmitter({
-          x: this.x,
-          y: this.y,
-          speed: { min: 100, max: 200 },
-          scale: { start: 0.1, end: 0 },
-          alpha: { start: 1, end: 0 },
-          lifespan: 1500,
-          quantity: 30,
-          blendMode: Phaser.BlendModes.ADD
-      });
-      
-      // Remove particles after they complete
-      this.scene.time.delayedCall(2000, () => {
-          particles.destroy();
-      });
-  }
-  
-  firePattern() {
-      // Choose firing pattern based on current phase
-      switch (this.phase) {
-          case 1:
-              this.fireCirclePattern(8); // 8 bullets in a circle
-              break;
-          case 2:
-              this.fireCirclePattern(12); // 12 bullets in a circle
-              break;
-          case 3:
-              this.fireCirclePattern(16); // 16 bullets in a circle
-              
-              // Also fire spiral pattern in phase 3
-              this.scene.time.delayedCall(1000, () => {
-                  this.fireSpiralPattern(8);
-              });
-              break;
-      }
-  }
-  
-  fireCirclePattern(bulletCount) {
-      // Fire bullets in a circle pattern
-      const angleStep = (Math.PI * 2) / bulletCount;
-      const speed = 150;
-      
-      for (let i = 0; i < bulletCount; i++) {
-          const angle = i * angleStep;
-          
-          // Calculate velocity based on angle
-          const velocityX = Math.cos(angle) * speed;
-          const velocityY = Math.sin(angle) * speed;
-          
-          // Create bullet
-          if (!this.scene.textures.exists('bossBullet')) {
-              // If bullet texture doesn't exist, create a temporary circle
-              const bullet = new BossBullet(this.scene, this.x, this.y, { x: velocityX, y: velocityY });
-              bullet.setTexture('villain'); // Use villain texture temporarily
-          } else {
-              // Use proper bullet texture
-              const bullet = new BossBullet(this.scene, this.x, this.y, { x: velocityX, y: velocityY });
-          }
-      }
-  }
-  
-  fireSpiralPattern(bulletCount) {
-      // Fire bullets in a spiral pattern
-      const angleStep = (Math.PI * 2) / bulletCount;
-      const speed = 150;
-      
-      for (let i = 0; i < bulletCount; i++) {
-          // Delayed firing for spiral effect
-          this.scene.time.delayedCall(i * 100, () => {
-              if (!this.active) return; // Skip if boss is destroyed
-              
-              const angle = i * angleStep;
-              
-              // Calculate velocity based on angle
-              const velocityX = Math.cos(angle) * speed;
-              const velocityY = Math.sin(angle) * speed;
-              
-              // Create bullet
-              if (!this.scene.textures.exists('bossBullet')) {
-                  // If bullet texture doesn't exist, create a temporary circle
-                  const bullet = new BossBullet(this.scene, this.x, this.y, { x: velocityX, y: velocityY });
-                  bullet.setTexture('villain'); // Use villain texture temporarily
-              } else {
-                  // Use proper bullet texture
-                  const bullet = new BossBullet(this.scene, this.x, this.y, { x: velocityX, y: velocityY });
-              }
-          });
-      }
+      // Create boss shield
+      this.createShield();
   }
   
   update() {
-      // Update all bullets
-      this.bullets.getChildren().forEach(bullet => {
-          bullet.update();
+      // Update shield rotation
+      if (this.shield) {
+          this.shield.rotation += 0.01;
+      }
+  }
+  
+  createHoverAnimation() {
+      // Add floating animation
+      this.scene.tweens.add({
+          targets: this,
+          y: this.y + 30,
+          duration: 2500,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut'
       });
+  }
+  
+  createShield() {
+      // Create shield visual (only active until damage is taken)
+      this.shield = this.scene.add.graphics();
+      this.shield.lineStyle(5, 0x00ffff, 0.8);
+      this.shield.strokeCircle(0, 0, 90);
+      this.shield.x = this.x;
+      this.shield.y = this.y;
+      
+      // Update shield position
+      this.scene.events.on('update', () => {
+          if (this.shield && this.active) {
+              this.shield.x = this.x;
+              this.shield.y = this.y;
+          }
+      });
+  }
+  
+  takeDamage(amount) {
+      // Flash effect
+      this.setTint(0xffffff);
+      this.scene.time.delayedCall(100, () => {
+          this.setTint(0xff0000);
+      });
+      
+      // Reduce health
+      this.health -= amount;
+      
+      // Remove shield on first hit
+      if (this.shield && this.health < this.maxHealth) {
+          // Animate shield breaking
+          this.scene.tweens.add({
+              targets: this.shield,
+              alpha: 0,
+              scale: 1.5,
+              duration: 300,
+              onComplete: () => {
+                  this.shield.destroy();
+                  this.shield = null;
+              }
+          });
+      }
+      
+      // Check if defeated
+      if (this.health <= 0) {
+          this.die();
+      }
+  }
+  
+  die() {
+      // Stop any ongoing attacks
+      this.attackCooldown = true;
+      
+      // Explode animation
+      for (let i = 0; i < 20; i++) {
+          // Create particle
+          const particle = this.scene.add.circle(
+              this.x + Phaser.Math.Between(-50, 50),
+              this.y + Phaser.Math.Between(-50, 50),
+              Phaser.Math.Between(5, 15),
+              0xff0000
+          );
+          
+          // Animate particle
+      this.scene.tweens.add({
+              targets: particle,
+              x: particle.x + Phaser.Math.Between(-200, 200),
+              y: particle.y + Phaser.Math.Between(-200, 200),
+              alpha: 0,
+              scale: 0,
+              duration: Phaser.Math.Between(500, 1500),
+          onComplete: () => {
+                  particle.destroy();
+              }
+          });
+      }
+      
+      // Flash screen
+      this.scene.cameras.main.flash(1000, 255, 255, 255);
+      
+      // Destroy boss
+      this.destroy();
+  }
+  
+  attack(player) {
+      // Choose random attack pattern
+      if (!this.attackCooldown && player && player.active) {
+          // Set cooldown flag
+          this.attackCooldown = true;
+          
+          // Choose random attack
+          const attackIndex = Phaser.Math.Between(0, this.attackPatterns.length - 1);
+          this.attackPatterns[attackIndex](player);
+          
+          // Reset cooldown
+          this.scene.time.delayedCall(this.attackInterval, () => {
+              this.attackCooldown = false;
+          });
+      }
+  }
+  
+  shootProjectile(player) {
+      // Basic single projectile attack
+      if (!player || !player.active) return;
+      
+      // Create bullet
+      const bullet = this.createBullet(this.x, this.y);
+      
+      // Calculate angle to player
+      const angle = Phaser.Math.Angle.Between(this.x, this.y, player.x, player.y);
+      
+      // Set velocity
+      bullet.body.velocity.x = Math.cos(angle) * this.bulletSpeed;
+      bullet.body.velocity.y = Math.sin(angle) * this.bulletSpeed;
+      
+      // Set damage property
+      bullet.damage = this.bulletDamage;
+      
+      // Auto destroy bullet after 3 seconds
+      this.scene.time.delayedCall(3000, () => {
+          if (bullet.active) {
+              bullet.destroy();
+          }
+      });
+  }
+  
+  shootSpreadProjectiles(player) {
+      // Shoot multiple bullets in a spread pattern
+      if (!player || !player.active) return;
+      
+      // Base angle toward player
+      const centerAngle = Phaser.Math.Angle.Between(this.x, this.y, player.x, player.y);
+      
+      // Create multiple bullets in a spread
+      for (let i = -2; i <= 2; i++) {
+          // Calculate spread angle
+          const angle = centerAngle + (i * Math.PI / 10);
+          
+          // Create bullet
+          const bullet = this.createBullet(this.x, this.y);
+          
+          // Set velocity
+          bullet.body.velocity.x = Math.cos(angle) * this.bulletSpeed;
+          bullet.body.velocity.y = Math.sin(angle) * this.bulletSpeed;
+          
+          // Set damage property
+          bullet.damage = this.bulletDamage;
+          
+          // Auto destroy bullet after 3 seconds
+          this.scene.time.delayedCall(3000, () => {
+              if (bullet.active) {
+                  bullet.destroy();
+              }
+          });
+      }
+  }
+  
+  chargeDash(player) {
+      // Charge toward player
+      if (!player || !player.active) return;
+      
+      // Flash before charging
+      this.setTint(0xffff00);
+      
+      // Charge preparation
+      this.scene.tweens.add({
+          targets: this,
+          scaleX: 1.5,
+          scaleY: 0.8,
+          duration: 500,
+          onComplete: () => {
+              // Reset tint
+              this.setTint(0xff0000);
+              
+              // Get angle to player
+              const angle = Phaser.Math.Angle.Between(this.x, this.y, player.x, player.y);
+              
+              // Charge toward player
+              this.scene.tweens.add({
+                  targets: this,
+                  x: this.x + Math.cos(angle) * 400,
+                  y: this.y + Math.sin(angle) * 400,
+                  scaleX: 1.2,
+                  scaleY: 1.2,
+                  duration: 500,
+                  ease: 'Power2',
+                  onComplete: () => {
+                      // Reset scale
+                      this.setScale(1.2);
+              }
+          });
+      }
+      });
+  }
+  
+  createBullet(x, y) {
+      // Create bullet object
+      const bullet = this.scene.add.circle(x, y, 10, 0xff0000);
+      
+      // Add to physics
+      this.bullets.add(bullet);
+      this.scene.bullets.add(bullet);
+      bullet.body.setCircle(10);
+      
+      // Add glow effect
+      const glow = this.scene.add.circle(x, y, 15, 0xff0000, 0.3);
+      
+      // Make glow follow bullet
+      this.scene.events.on('update', () => {
+          if (bullet.active) {
+              glow.x = bullet.x;
+              glow.y = bullet.y;
+          } else {
+              glow.destroy();
+          }
+      });
+      
+      return bullet;
   }
 }

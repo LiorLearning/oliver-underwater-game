@@ -18,8 +18,6 @@ window.onload = function() {
             PreloadScene,
             MenuScene,
             Level1Scene,
-            PuzzleScene,
-            ToolSelectScene,
             BossScene
         ]
     };
@@ -33,11 +31,8 @@ window.onload = function() {
     // Game global variables
     window.gameState = {
         score: 0,
-        level: 1,
-        collectedItems: 0,
-        requiredItems: 3,
-        mathPuzzlesSolved: 0,
-        shipUpgrades: [],
-        selectedTool: null
+        health: 100,
+        collectedTools: [],
+        highScore: localStorage.getItem('mazeHighScore') || 0
     };
 };
