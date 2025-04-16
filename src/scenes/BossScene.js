@@ -52,7 +52,7 @@ export class BossScene extends Phaser.Scene {
 
   createBackground() {
       // Create a special background for the boss area
-      this.add.image(400, 300, 'bg').setTint(0xaa0000); // Red tint for danger
+      this.add.image(800, 600, 'bg').setTint(0xaa0000).setScale(1.0); // Red tint for danger
       
       // Add some atmosphere with particles
       this.createParticleEffects();
@@ -63,11 +63,11 @@ export class BossScene extends Phaser.Scene {
       const bubbleParticles = this.add.particles('sidekick'); // Reusing sidekick sprite as particle
       
       bubbleParticles.createEmitter({
-          x: { min: 0, max: 800 },
-          y: { min: 0, max: 600 },
-          scale: { start: 0.05, end: 0.01 },
+          x: { min: 0, max: 1600 },
+          y: { min: 0, max: 1200 },
+          scale: { start: 0.1, end: 0.02 },
           alpha: { start: 0.5, end: 0 },
-          speed: 20,
+          speed: 40,
           lifespan: 4000,
           blendMode: 'ADD',
           frequency: 200
@@ -76,18 +76,18 @@ export class BossScene extends Phaser.Scene {
 
   createBoss() {
       // Create the boss villain
-      this.boss = this.physics.add.sprite(600, 300, 'villain').setScale(0.4);
+      this.boss = this.physics.add.sprite(1200, 600, 'villain').setScale(0.8);
       
       // Set up boss animations and behavior
       this.boss.body.setAllowGravity(false);
       
       // Add health bar for boss
-      this.bossHealthBar = this.add.rectangle(600, 200, 200, 20, 0xff0000);
+      this.bossHealthBar = this.add.rectangle(1200, 400, 400, 40, 0xff0000);
       
       // Make boss float up and down
       this.tweens.add({
           targets: this.boss,
-          y: 350,
+          y: 700,
           duration: 2000,
           yoyo: true,
           repeat: -1,
@@ -97,10 +97,10 @@ export class BossScene extends Phaser.Scene {
 
   createPlayer() {
       // Create player
-      this.player = new Player(this, 200, 300, 'hero');
+      this.player = new Player(this, 400, 600, 'hero');
       
       // Create sidekick (Blub)
-      this.sidekick = new Sidekick(this, 250, 300, 'sidekick');
+      this.sidekick = new Sidekick(this, 500, 600, 'sidekick');
       
       // Set up collision with boss
       this.physics.add.overlap(
@@ -114,33 +114,33 @@ export class BossScene extends Phaser.Scene {
 
   createUI() {
       // Add boss name and health display
-      this.add.text(600, 150, 'DEEP SEA VILLAIN', {
-          font: '24px Arial',
+      this.add.text(1200, 300, 'DEEP SEA VILLAIN', {
+          font: '48px Arial',
           fill: '#ffffff'
       }).setOrigin(0.5);
       
       // Add player health
-      this.playerHealthBar = this.add.rectangle(200, 100, 150, 15, 0x00ff00);
+      this.playerHealthBar = this.add.rectangle(400, 200, 300, 30, 0x00ff00);
       
-      this.add.text(200, 80, 'OLIVER', {
-          font: '18px Arial',
+      this.add.text(400, 160, 'OLIVER', {
+          font: '36px Arial',
           fill: '#ffffff'
       }).setOrigin(0.5);
       
       // Add instructions
-      this.instructionText = this.add.text(400, 500, 'Press SPACE to attack when close to the boss!', {
-          font: '18px Arial',
+      this.instructionText = this.add.text(800, 1000, 'Press SPACE to attack when close to the boss!', {
+          font: '36px Arial',
           fill: '#ffffff',
           backgroundColor: '#000000',
-          padding: { x: 10, y: 5 }
+          padding: { x: 20, y: 10 }
       }).setOrigin(0.5);
       
       // Add special attack button
-      this.specialAttackButton = this.add.text(400, 550, 'SPECIAL ATTACK', {
-          font: '20px Arial',
+      this.specialAttackButton = this.add.text(800, 1100, 'SPECIAL ATTACK', {
+          font: '40px Arial',
           fill: '#ffffff',
           backgroundColor: '#880088',
-          padding: { x: 15, y: 10 }
+          padding: { x: 30, y: 20 }
       }).setOrigin(0.5).setInteractive();
       
       this.specialAttackButton.on('pointerdown', () => {
@@ -159,9 +159,9 @@ export class BossScene extends Phaser.Scene {
       ];
       
       // Create dialogue box
-      const dialogueBox = this.add.rectangle(400, 300, 600, 150, 0x000000, 0.8);
-      const dialogueText = this.add.text(400, 300, '', {
-          font: '18px Arial',
+      const dialogueBox = this.add.rectangle(800, 600, 1200, 300, 0x000000, 0.8);
+      const dialogueText = this.add.text(800, 600, '', {
+          font: '36px Arial',
           fill: '#ffffff',
           align: 'center'
       }).setOrigin(0.5);
@@ -186,8 +186,8 @@ export class BossScene extends Phaser.Scene {
 
   startBattle() {
       // Show battle start message
-      this.add.text(400, 300, 'BATTLE START!', {
-          font: '48px Arial',
+      this.add.text(800, 600, 'BATTLE START!', {
+          font: '96px Arial',
           fill: '#ffffff'
       }).setOrigin(0.5)
       .setAlpha(0)
@@ -249,8 +249,8 @@ export class BossScene extends Phaser.Scene {
               // Return to original position
               this.tweens.add({
                   targets: this.boss,
-                  x: 600,
-                  y: 300,
+                  x: 1200,
+                  y: 600,
                   duration: 1500,
                   ease: 'Sine.easeInOut'
               });
@@ -395,7 +395,7 @@ export class BossScene extends Phaser.Scene {
       this.bossHealth--;
       
       // Update health bar
-      this.bossHealthBar.width = (this.bossHealth / 3) * 200;
+      this.bossHealthBar.width = (this.bossHealth / 3) * 400;
       
       // Visual feedback
       this.boss.setTint(0xff0000);
@@ -446,32 +446,32 @@ export class BossScene extends Phaser.Scene {
 
   showVictoryScreen() {
       // Create victory overlay
-      const overlay = this.add.rectangle(400, 300, 800, 600, 0x000000, 0.8);
+      const overlay = this.add.rectangle(800, 600, 1600, 1200, 0x000000, 0.8);
       
       // Victory text
-      this.add.text(400, 200, 'VICTORY!', {
-          font: '64px Arial',
+      this.add.text(800, 400, 'VICTORY!', {
+          font: '128px Arial',
           fill: '#ffff00'
       }).setOrigin(0.5);
       
       // Score display
-      this.add.text(400, 300, `Final Score: ${window.gameState.score + 1000}`, {
-          font: '32px Arial',
+      this.add.text(800, 600, `Final Score: ${window.gameState.score + 1000}`, {
+          font: '64px Arial',
           fill: '#ffffff'
       }).setOrigin(0.5);
       
       // Unlocks
-      this.add.text(400, 380, `Ship Upgrades: ${window.gameState.shipUpgrades.length}`, {
-          font: '24px Arial',
+      this.add.text(800, 700, `Ship Upgrades: ${window.gameState.shipUpgrades.length}`, {
+          font: '48px Arial',
           fill: '#ffffff'
       }).setOrigin(0.5);
       
       // Continue button
-      const continueButton = this.add.text(400, 480, 'CONTINUE', {
-          font: '32px Arial',
+      const continueButton = this.add.text(800, 900, 'CONTINUE', {
+          font: '64px Arial',
           fill: '#ffffff',
           backgroundColor: '#006699',
-          padding: { x: 20, y: 10 }
+          padding: { x: 40, y: 20 }
       }).setOrigin(0.5).setInteractive();
       
       continueButton.on('pointerdown', () => {
@@ -521,11 +521,11 @@ export class BossScene extends Phaser.Scene {
 
   showMessage(text) {
       // Create a message that appears briefly
-      const message = this.add.text(400, 100, text, {
-          font: '20px Arial',
+      const message = this.add.text(800, 200, text, {
+          font: '48px Arial',
           fill: '#ffffff',
           backgroundColor: '#000000',
-          padding: { x: 10, y: 5 }
+          padding: { x: 20, y: 10 }
       }).setOrigin(0.5).setDepth(100);
       
       // Remove after a delay

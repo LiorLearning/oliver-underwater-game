@@ -13,10 +13,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.setDrag(0.9); // Water resistance value
         
         // Set scale
-        this.setScale(0.3);
+        this.setScale(0.6);
         
         // Movement properties
-        this.moveSpeed = 200;
+        this.moveSpeed = 400;
         this.diagonalFactor = 0.7071; // 1/sqrt(2)
         
         // Control inputs
@@ -69,15 +69,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     createBubbleTrail(scene) {
         // Create bubble emitter for underwater effect
         this.bubbleEmitter = scene.add.particles('sidekick').createEmitter({
-            speed: { min: 10, max: 30 },
-            scale: { start: 0.05, end: 0.01 },
+            speed: { min: 20, max: 60 },
+            scale: { start: 0.1, end: 0.02 },
             alpha: { start: 0.5, end: 0 },
             lifespan: 2000,
             frequency: 100,
             emitZone: {
                 type: 'edge',
-                source: new Phaser.Geom.Rectangle(-10, -10, 20, 20),
-                quantity: 5
+                source: new Phaser.Geom.Rectangle(-20, -20, 40, 40),
+                quantity: 10
             }
         });
         

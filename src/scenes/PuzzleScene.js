@@ -5,12 +5,16 @@ export class PuzzleScene extends Phaser.Scene {
       this.level = null;
       this.parentScene = null;
       this.correctAnswer = null;
+      this.toolName = 'Tool';
+      this.toolImage = 'wrench'; // Default to wrench if no image specified
   }
 
   init(data) {
       this.puzzleId = data.puzzleId;
       this.level = data.level;
       this.parentScene = data.parentScene;
+      this.toolName = data.toolName || 'Tool';
+      this.toolImage = data.toolImage || 'wrench'; // Default to wrench if no image specified
   }
 
   create() {
@@ -29,17 +33,22 @@ export class PuzzleScene extends Phaser.Scene {
 
   createBackground() {
       // Semi-transparent overlay
-      this.add.rectangle(400, 300, 800, 600, 0x000000, 0.8);
+      this.add.rectangle(800, 600, 1600, 1200, 0x000000, 0.8);
       
       // Title
-      this.add.text(400, 50, 'Math Challenge', {
-          font: '32px Arial',
+      this.add.text(800, 100, `Solve to get the ${this.toolName}`, {
+          font: '64px Arial',
           fill: '#ffffff'
       }).setOrigin(0.5);
       
+      // Display tool image
+      this.add.image(800, 280, this.toolImage)
+          .setScale(0.8)
+          .setOrigin(0.5);
+      
       // Puzzle ID display
-      this.add.text(400, 90, `Puzzle ${this.puzzleId} - Level ${this.level}`, {
-          font: '20px Arial',
+      this.add.text(800, 180, `Puzzle ${this.puzzleId} - Level ${this.level}`, {
+          font: '40px Arial',
           fill: '#ffffff'
       }).setOrigin(0.5);
   }
@@ -68,8 +77,8 @@ export class PuzzleScene extends Phaser.Scene {
       this.correctAnswer = num1 * num2;
       
       // Display problem
-      this.add.text(400, 150, `${num1} × ${num2} = ?`, {
-          font: '36px Arial',
+      this.add.text(800, 380, `${num1} × ${num2} = ?`, {
+          font: '72px Arial',
           fill: '#ffffff'
       }).setOrigin(0.5);
       
@@ -112,8 +121,8 @@ export class PuzzleScene extends Phaser.Scene {
       }
       
       // Display problem
-      this.add.text(400, 150, `${numerator1}/${denominator} + ${numerator2}/${denominator} = ?`, {
-          font: '36px Arial',
+      this.add.text(800, 380, `${numerator1}/${denominator} + ${numerator2}/${denominator} = ?`, {
+          font: '72px Arial',
           fill: '#ffffff'
       }).setOrigin(0.5);
       
@@ -156,19 +165,19 @@ export class PuzzleScene extends Phaser.Scene {
       this.correctAnswer = pattern.next;
       
       // Display problem
-      this.add.text(400, 150, "What number comes next in this pattern?", {
-          font: '24px Arial',
+      this.add.text(800, 380, "What number comes next in this pattern?", {
+          font: '48px Arial',
           fill: '#ffffff'
       }).setOrigin(0.5);
       
-      this.add.text(400, 200, pattern.sequence.join(", ") + ", ?", {
-          font: '36px Arial',
+      this.add.text(800, 440, pattern.sequence.join(", ") + ", ?", {
+          font: '72px Arial',
           fill: '#ffffff'
       }).setOrigin(0.5);
       
       // Add hint text
-      this.add.text(400, 250, "Hint: " + pattern.rule, {
-          font: '18px Arial',
+      this.add.text(800, 540, "Hint: " + pattern.rule, {
+          font: '36px Arial',
           fill: '#aaaaaa'
       }).setOrigin(0.5);
       
@@ -190,25 +199,35 @@ export class PuzzleScene extends Phaser.Scene {
       // Shuffle the answers
       Phaser.Utils.Array.Shuffle(answers);
       
-      // Position for options
+      // Create button positions
       const positions = [
-          { x: 250, y: 300 },
-          { x: 550, y: 300 },
-          { x: 250, y: 400 },
-          { x: 550, y: 400 }
+          { x: 500, y: 700 },
+          { x: 1100, y: 700 },
+          { x: 500, y: 850 },
+          { x: 1100, y: 850 }
       ];
       
-      // Create buttons for each option
+      // Create buttons for each answer
       answers.forEach((answer, index) => {
-          const pos = positions[index];
+          // Create button
+          const button = this.add.rectangle(
+              positions[index].x,
+              positions[index].y,
+              300,
+              100,
+              0x0066aa
+          ).setInteractive();
           
-          const button = this.add.rectangle(pos.x, pos.y, 200, 80, 0x006699, 1)
-              .setInteractive();
-          
-          const text = this.add.text(pos.x, pos.y, answer.toString(), {
-              font: '24px Arial',
-              fill: '#ffffff'
-          }).setOrigin(0.5);
+          // Add text
+          const text = this.add.text(
+              positions[index].x,
+              positions[index].y,
+              answer.toString(),
+              {
+                  font: '36px Arial',
+                  fill: '#ffffff'
+              }
+          ).setOrigin(0.5);
           
           // Button hover effect
           button.on('pointerover', () => {
@@ -216,7 +235,7 @@ export class PuzzleScene extends Phaser.Scene {
           });
           
           button.on('pointerout', () => {
-              button.setFillStyle(0x006699);
+              button.setFillStyle(0x0066aa);
           });
           
           // Check answer when clicked
@@ -227,9 +246,17 @@ export class PuzzleScene extends Phaser.Scene {
   }
 
   createButtons() {
-      // Create a close button to exit the puzzle
-      const closeButton = this.add.text(700, 50, 'X', {
-          font: '32px Arial',
+      // Add hint button
+      const hintButton = this.add.text(800, 1050, 'Get Hint', {
+          font: '36px Arial',
+          fill: '#ffffff',
+          backgroundColor: '#006633',
+          padding: { x: 20, y: 10 }
+      }).setOrigin(0.5).setInteractive();
+      
+      // Add close button
+      const closeButton = this.add.text(1450, 100, 'X', {
+          font: '48px Arial',
           fill: '#ffffff',
           backgroundColor: '#880000',
           padding: { x: 15, y: 10 }
@@ -241,11 +268,22 @@ export class PuzzleScene extends Phaser.Scene {
   }
 
   createSidekick() {
-      // Add sidekick character with a hint
-      const sidekick = this.add.image(100, 500, 'sidekick').setScale(0.2);
+      // Add sidekick character
+      this.sidekick = this.add.image(200, 900, 'sidekick')
+          .setScale(0.4)
+          .setOrigin(0.5);
       
-      // Add speech bubble
-      const speechBubble = this.add.rectangle(220, 500, 240, 80, 0xffffff, 1);
+      // Add thought bubble
+      this.bubble = this.add.rectangle(300, 800, 380, 150, 0xffffff, 1)
+          .setOrigin(0.5)
+          .setAlpha(0);
+          
+      this.bubbleText = this.add.text(300, 800, '', {
+          font: '28px Arial',
+          fill: '#000000',
+          align: 'center',
+          wordWrap: { width: 340 }
+      }).setOrigin(0.5).setAlpha(0);
       
       // Add hint text
       const hints = [
@@ -262,7 +300,7 @@ export class PuzzleScene extends Phaser.Scene {
       
       // Add simple animation to sidekick
       this.tweens.add({
-          targets: sidekick,
+          targets: this.sidekick,
           y: 480,
           duration: 1500,
           yoyo: true,
@@ -281,8 +319,8 @@ export class PuzzleScene extends Phaser.Scene {
 
   handleCorrectAnswer() {
       // Show success message
-      const success = this.add.text(400, 200, 'Correct!', {
-          font: '48px Arial',
+      const success = this.add.text(800, 400, 'Correct!', {
+          font: '96px Arial',
           fill: '#00ff00'
       }).setOrigin(0.5);
       
@@ -301,8 +339,8 @@ export class PuzzleScene extends Phaser.Scene {
 
   handleWrongAnswer() {
       // Show error message
-      const error = this.add.text(400, 200, 'Try Again!', {
-          font: '48px Arial',
+      const error = this.add.text(800, 400, 'Try Again!', {
+          font: '96px Arial',
           fill: '#ff0000'
       }).setOrigin(0.5);
       

@@ -31,6 +31,11 @@ export class PreloadScene extends Phaser.Scene {
       // UI elements
       this.load.image('button', 'assets/images/button.png');
       this.load.image('collectible', 'assets/images/collectible.png');
+      
+      // Tool images
+      this.load.image('wrench', 'assets/images/wrench.png');
+      this.load.image('hammer', 'assets/images/hammer.png');
+      this.load.image('screwdriver', 'assets/images/screwdriver.png');
   }
 
   loadSpritesheets() {

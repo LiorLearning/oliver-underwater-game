@@ -42,7 +42,7 @@ export class Level1Scene extends Phaser.Scene {
       this.setupCollisions();
       
       // Set up camera
-      this.cameras.main.setBounds(0, 0, 1600, 1200);
+      this.cameras.main.setBounds(0, 0, 3200, 2400);
       this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
       
       // Add instructions overlay
@@ -64,9 +64,13 @@ export class Level1Scene extends Phaser.Scene {
   }
 
   createBackground() {
-      // Create a large scrollable background (twice the size of the viewport)
-      this.bg = this.add.tileSprite(0, 0, 1600, 1200, 'bg').setOrigin(0, 0);
-      this.bg.setScrollFactor(0.8); // Parallax effect
+      // Create a background that covers the full screen
+      this.bg = this.add.image(0, 0, 'bg')
+          .setOrigin(0, 0)
+          .setDisplaySize(3200, 2400);
+      
+      // Make sure the background follows the camera without parallax (full coverage)
+      this.bg.setScrollFactor(0);
       
       // Add some depth to the environment
       this.createEnvironmentObjects();
@@ -91,9 +95,9 @@ export class Level1Scene extends Phaser.Scene {
       
       // Add items at specific positions
       const positions = [
-          { x: 400, y: 200 },
-          { x: 800, y: 300 },
-          { x: 1200, y: 400 }
+          { x: 800, y: 400 },
+          { x: 1600, y: 600 },
+          { x: 2400, y: 800 }
       ];
       
       positions.forEach(pos => {
@@ -108,8 +112,8 @@ export class Level1Scene extends Phaser.Scene {
       
       // Add assistants at specific positions
       const positions = [
-          { x: 600, y: 400 },
-          { x: 1000, y: 200 }
+          { x: 1200, y: 800 },
+          { x: 2000, y: 400 }
       ];
       
       positions.forEach(pos => {
@@ -122,31 +126,31 @@ export class Level1Scene extends Phaser.Scene {
       // Create trigger zones for math puzzles
       this.puzzleTriggers = this.physics.add.group();
       
-      // Create three puzzle trigger areas
+      // Create three puzzle trigger areas with tool names
       const positions = [
-          { x: 500, y: 300 },
-          { x: 900, y: 400 },
-          { x: 1300, y: 200 }
+          { x: 1000, y: 600, tool: 'Wrench', image: 'wrench' },
+          { x: 1800, y: 800, tool: 'Hammer', image: 'hammer' },
+          { x: 2600, y: 400, tool: 'Screwdriver', image: 'screwdriver' }
       ];
       
       positions.forEach((pos, index) => {
-          const trigger = this.add.zone(pos.x, pos.y, 100, 100);
+          const trigger = this.add.zone(pos.x, pos.y, 200, 200);
           this.physics.world.enable(trigger);
           trigger.body.setAllowGravity(false);
           trigger.body.moves = false;
           
           // Add visual indicator
-          const visual = this.add.circle(pos.x, pos.y, 50, 0x00ffff, 0.3);
+          const visual = this.add.circle(pos.x, pos.y, 100, 0x00ffff, 0.3);
           
-          // Add text
-          this.add.text(pos.x, pos.y, `Math\nPuzzle ${index + 1}`, {
-              font: '16px Arial',
-              fill: '#ffffff',
-              align: 'center'
-          }).setOrigin(0.5);
+          // Add tool image instead of text
+          this.add.image(pos.x, pos.y, pos.image)
+              .setScale(0.3)
+              .setOrigin(0.5);
           
-          // Store puzzle ID
+          // Store puzzle ID and tool name
           trigger.puzzleId = index + 1;
+          trigger.toolName = pos.tool;
+          trigger.toolImage = pos.image;
           
           this.puzzleTriggers.add(trigger);
       });
@@ -154,17 +158,17 @@ export class Level1Scene extends Phaser.Scene {
 
   createBossTrigger() {
       // Create trigger zone for boss battle
-      this.bossTrigger = this.add.zone(1500, 600, 200, 200);
+      this.bossTrigger = this.add.zone(3000, 1200, 400, 400);
       this.physics.world.enable(this.bossTrigger);
       this.bossTrigger.body.setAllowGravity(false);
       this.bossTrigger.body.moves = false;
       
       // Add visual indicator
-      const visual = this.add.circle(1500, 600, 100, 0xff0000, 0.3);
+      const visual = this.add.circle(3000, 1200, 200, 0xff0000, 0.3);
       
       // Add warning text
-      this.add.text(1500, 600, 'BOSS AREA', {
-          font: '20px Arial',
+      this.add.text(3000, 1200, 'BOSS AREA', {
+          font: '40px Arial',
           fill: '#ff0000',
           align: 'center'
       }).setOrigin(0.5);
@@ -172,13 +176,13 @@ export class Level1Scene extends Phaser.Scene {
 
   createUI() {
       // Create fixed position UI elements
-      this.scoreText = this.add.text(16, 16, 'Score: 0', {
-          font: '18px Arial',
+      this.scoreText = this.add.text(32, 32, 'Score: 0', {
+          font: '36px Arial',
           fill: '#ffffff'
       }).setScrollFactor(0);
       
-      this.itemsText = this.add.text(16, 50, 'Items: 0/' + window.gameState.requiredItems, {
-          font: '18px Arial',
+      this.itemsText = this.add.text(32, 100, 'Items: 0/' + window.gameState.requiredItems, {
+          font: '36px Arial',
           fill: '#ffffff'
       }).setScrollFactor(0);
       
@@ -188,17 +192,17 @@ export class Level1Scene extends Phaser.Scene {
 
   createMiniMap() {
       // Simple minimap showing player location
-      const minimap = this.add.rectangle(700, 50, 100, 75, 0x000000, 0.5)
+      const minimap = this.add.rectangle(1400, 100, 200, 150, 0x000000, 0.5)
           .setScrollFactor(0);
           
-      this.minimapPlayer = this.add.circle(700, 50, 5, 0xffff00)
+      this.minimapPlayer = this.add.circle(1400, 100, 10, 0xffff00)
           .setScrollFactor(0);
           
       // Update minimap in scene update
       this.events.on('update', () => {
           // Calculate player position for minimap
-          const x = 700 + (this.player.x / 1600) * 100 - 50;
-          const y = 50 + (this.player.y / 1200) * 75 - 37.5;
+          const x = 1400 + (this.player.x / 3200) * 200 - 100;
+          const y = 100 + (this.player.y / 2400) * 150 - 75;
           
           this.minimapPlayer.setPosition(x, y);
       });
@@ -248,14 +252,14 @@ export class Level1Scene extends Phaser.Scene {
       
       // Update game state
       window.gameState.collectedItems++;
-      window.gameState.score += 100;
+      window.gameState.score += 1;
       
       // Update UI
       this.scoreText.setText('Score: ' + window.gameState.score);
       this.itemsText.setText('Items: ' + window.gameState.collectedItems + '/' + window.gameState.requiredItems);
       
       // Show collection message
-      this.showMessage('Item collected! ' + window.gameState.collectedItems + '/' + window.gameState.requiredItems);
+      this.showMessage('Collected 1 coin! Total: ' + window.gameState.score);
   }
 
   interactWithAssistant(player, assistant) {
@@ -286,7 +290,9 @@ export class Level1Scene extends Phaser.Scene {
       this.scene.launch('PuzzleScene', { 
           puzzleId: trigger.puzzleId,
           level: 1,
-          parentScene: this
+          parentScene: this,
+          toolName: trigger.toolName,
+          toolImage: trigger.toolImage
       });
       
       // Pause this scene while puzzle is active
@@ -341,17 +347,17 @@ export class Level1Scene extends Phaser.Scene {
           "Defeat the boss to complete the level"
       ];
       
-      const instructionBox = this.add.rectangle(400, 300, 500, 300, 0x000000, 0.8)
+      const instructionBox = this.add.rectangle(800, 600, 500, 300, 0x000000, 0.8)
           .setScrollFactor(0);
           
-      const instructionText = this.add.text(400, 300, instructions.join('\n\n'), {
+      const instructionText = this.add.text(800, 600, instructions.join('\n\n'), {
           font: '18px Arial',
           fill: '#ffffff',
           align: 'center'
       }).setOrigin(0.5).setScrollFactor(0);
       
       // Add continue button
-      const continueButton = this.add.text(400, 430, 'CONTINUE', {
+      const continueButton = this.add.text(800, 730, 'CONTINUE', {
           font: '20px Arial',
           fill: '#ffffff',
           backgroundColor: '#006699',

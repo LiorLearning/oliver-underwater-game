@@ -11,7 +11,7 @@ export class Assistant extends Phaser.Physics.Arcade.Sprite {
       this.body.setImmovable(true);
       
       // Set scale
-      this.setScale(0.15);
+      this.setScale(0.3);
       
       // State tracking
       this.hasInteracted = false;
@@ -20,9 +20,6 @@ export class Assistant extends Phaser.Physics.Arcade.Sprite {
       // Hover animation
       this.createHoverAnimation();
       
-      // Glow effect
-      this.createGlowEffect();
-      
       // Interaction indicator
       this.createInteractionIndicator();
   }
@@ -30,53 +27,34 @@ export class Assistant extends Phaser.Physics.Arcade.Sprite {
   update() {
       // Update interaction indicator position
       if (this.interactionIndicator) {
-          this.interactionIndicator.setPosition(this.x, this.y - 40);
+          this.interactionIndicator.setPosition(this.x, this.y - 80);
       }
   }
   
   createHoverAnimation() {
-      // Create a subtle hovering animation
+      // Create a simple hovering animation
       this.scene.tweens.add({
           targets: this,
           y: this.y + 20,
-          duration: 2000,
+          duration: 3000,
           yoyo: true,
           repeat: -1,
           ease: 'Sine.easeInOut'
       });
   }
   
-  createGlowEffect() {
-      // Add a subtle glow effect
-      const glow = this.scene.add.sprite(this.x, this.y, 'assistant')
-          .setScale(this.scale * 1.2)
-          .setAlpha(0.3)
-          .setBlendMode(Phaser.BlendModes.ADD)
-          .setTint(0x00ffff);
-          
-      // Link the glow effect to the assistant
-      this.on('destroy', () => {
-          glow.destroy();
-      });
-      
-      // Update glow position
-      this.scene.events.on('update', () => {
-          glow.setPosition(this.x, this.y);
-      });
-  }
-  
   createInteractionIndicator() {
       // Create an indicator showing the assistant can be interacted with
-      this.interactionIndicator = this.scene.add.text(this.x, this.y - 40, '?', {
-          font: '20px Arial',
+      this.interactionIndicator = this.scene.add.text(this.x, this.y - 80, '?', {
+          font: '40px Arial',
           fill: '#ffffff'
       }).setOrigin(0.5);
       
-      // Add a pulsing animation
+      // Add a simple pulsing animation
       this.scene.tweens.add({
           targets: this.interactionIndicator,
           scale: 1.2,
-          duration: 800,
+          duration: 1500,
           yoyo: true,
           repeat: -1,
           ease: 'Sine.easeInOut'
@@ -103,33 +81,9 @@ export class Assistant extends Phaser.Physics.Arcade.Sprite {
           ease: 'Sine.easeInOut'
       });
       
-      // Show particles
-      this.createInteractionParticles();
-      
       // Return to player after a delay
       this.scene.time.delayedCall(5000, () => {
           this.followPlayer();
-      });
-  }
-  
-  createInteractionParticles() {
-      // Create particles when interacting
-      const particles = this.scene.add.particles('assistant');
-      
-      particles.createEmitter({
-          x: this.x,
-          y: this.y,
-          speed: { min: 50, max: 100 },
-          scale: { start: 0.05, end: 0.01 },
-          alpha: { start: 0.5, end: 0 },
-          lifespan: 1000,
-          quantity: 10,
-          blendMode: Phaser.BlendModes.ADD
-      });
-      
-      // Remove particles after they complete
-      this.scene.time.delayedCall(1000, () => {
-          particles.destroy();
       });
   }
   
@@ -141,17 +95,17 @@ export class Assistant extends Phaser.Physics.Arcade.Sprite {
           // Get player reference
           const player = this.scene.player;
           
-          // Start following animation
+          // Start following animation with longer duration
           this.followTween = this.scene.tweens.add({
               targets: this,
-              x: player.x + Phaser.Math.Between(-100, 100),
-              y: player.y + Phaser.Math.Between(-100, 100),
-              duration: 2000,
+              x: player.x + Phaser.Math.Between(-200, 200),
+              y: player.y + Phaser.Math.Between(-200, 200),
+              duration: 3000,
               ease: 'Sine.easeInOut',
               onComplete: () => {
-                  // Continue following at random offsets
+                  // Continue following at random offsets with longer delay
                   if (this.isHelping && player) {
-                      this.scene.time.delayedCall(1000, () => {
+                      this.scene.time.delayedCall(2000, () => {
                           this.followPlayer();
                       });
                   }
@@ -171,11 +125,11 @@ export class Assistant extends Phaser.Physics.Arcade.Sprite {
       const hint = Phaser.Utils.Array.GetRandom(hints);
       
       // Create hint bubble
-      const bubble = this.scene.add.rectangle(this.x, this.y - 50, hint.length * 7 + 20, 40, 0xffffff, 1)
+      const bubble = this.scene.add.rectangle(this.x, this.y - 100, hint.length * 14 + 40, 80, 0xffffff, 1)
           .setOrigin(0.5);
           
-      const text = this.scene.add.text(this.x, this.y - 50, hint, {
-          font: '14px Arial',
+      const text = this.scene.add.text(this.x, this.y - 100, hint, {
+          font: '28px Arial',
           fill: '#000000'
       }).setOrigin(0.5);
       
