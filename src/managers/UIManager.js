@@ -110,11 +110,14 @@ export class UIManager {
         const bottomMargin = 0; // Same margin as tools for consistency
         const smokeBombX = 100; // Further from edge
         
+        // Ensure player exists before accessing smoke bombs count
+        const smokeBombCount = this.scene.player ? this.scene.player.smokeBombs : 0;
+        
         // Add smoke bomb UI
         this.smokeBombsText = this.scene.add.text(
             smokeBombX, 
             this.gameHeight - bottomMargin + 50, 
-            `Smoke Bombs: ${this.scene.player.smokeBombs}`, 
+            `Smoke Bombs: ${smokeBombCount}`, 
             {
                 font: '24px Arial',
                 fill: '#ffffff'

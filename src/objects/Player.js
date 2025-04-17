@@ -43,7 +43,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.invulnerableTime = 1000; // ms
         
         // Smoke bomb properties
-        this.smokeBombs = 0;
+        this.smokeBombs = 1;
         this.canDeployBomb = true;
         this.bombCooldown = 1000; // ms
         
@@ -555,22 +555,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     handleCollectible(collectible) {
         if (!collectible) return;
 
-        // If the collectible is a smoke bomb, launch math puzzle
+        // If the collectible is a smoke bomb, directly collect it
         if (collectible.type === 'smoke-bomb') {
-            // Store the reference to the collectible for later collection after puzzle is solved
-            this.pendingCollectible = collectible;
-            
-            // Launch the puzzle scene to solve a math problem
-            this.scene.scene.launch('PuzzleScene', {
-                puzzleId: Phaser.Math.Between(1, 3), // Random puzzle type
-                level: Phaser.Math.Between(1, 3),    // Random difficulty
-                parentScene: this.scene.scene.key,
-                toolName: 'Smoke Bomb',
-                toolImage: 'smoke-bomb'
-            });
-            
-            // Pause the current scene while puzzle is active
-            this.scene.scene.pause();
+            this.scene.collectSmokeBomb(this, collectible);
         } else {
             // For other collectibles, just collect them directly
             collectible.collect();

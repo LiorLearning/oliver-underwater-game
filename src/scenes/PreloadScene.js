@@ -91,6 +91,9 @@ export class PreloadScene extends Phaser.Scene {
       this.load.image('hammer', 'assets/images/hammer.png');
       this.load.image('screwdriver', 'assets/images/screwdriver.png');
       
+      // Sidekick
+      this.load.image('sidekick', 'assets/images/sidekick.png');
+      
       // Weapons
       this.load.image('smoke-bomb', 'assets/images/smoke-bomb.png');
   }

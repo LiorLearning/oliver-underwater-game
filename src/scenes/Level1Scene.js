@@ -1,6 +1,7 @@
 import { Collectible } from '../objects/Collectible.js';
 import { Player } from '../objects/Player.js';
 import { Assistant } from '../objects/Assistant.js';
+import { Sidekick } from '../objects/Sidekick.js';
 import { MazeGenerator } from '../managers/MazeGenerator.js';
 import { UIManager } from '../managers/UIManager.js';
 import { MiniMapManager } from '../managers/MiniMapManager.js';
@@ -18,6 +19,7 @@ export class Level1Scene extends Phaser.Scene {
       this.tools = null;
       this.exit = null;
       this.exitOpen = false;
+      this.sidekick = null;
       
       // Scene dimensions
       this.worldWidth = 3200;
@@ -29,6 +31,7 @@ export class Level1Scene extends Phaser.Scene {
       // Initialize game state
       window.gameState = window.gameState || {};
       window.gameState.collectedTools = [];
+      window.gameState.collectedSmokeBombs = [];
   }
 
   create() {
@@ -51,7 +54,7 @@ export class Level1Scene extends Phaser.Scene {
       this.exitManager.createExitDoor();
       
       // Create collectibles
-      this.createCoins();
+    //   this.createCoins();
       this.toolManager.createTools();
       // Create smoke bomb collectibles
       this.createSmokeBombs();
@@ -59,6 +62,9 @@ export class Level1Scene extends Phaser.Scene {
       // Create player and enemies
       this.createPlayer();
       console.log('Player created:', !!this.player);
+      
+      this.createSidekick();
+      console.log('Sidekick created:', !!this.sidekick);
       
       this.createAssistants();
       console.log('Assistants created:', !!this.assistants);
@@ -111,13 +117,15 @@ export class Level1Scene extends Phaser.Scene {
           this.uiManager.updateSmokeBombUI(this.player.smokeBombs);
       }
       
+      // Update sidekick to follow player
+      if (this.player && this.sidekick) {
+          this.sidekick.update(this.player.x, this.player.y);
+      }
+      
       // Update assistants (enemies)
       this.assistants.getChildren().forEach(assistant => {
           assistant.update();
       });
-      
-      // Check exit condition
-      this.exitManager.checkExitCondition();
       
       // Update minimap
       this.miniMapManager.updateMiniMap();
@@ -127,6 +135,7 @@ export class Level1Scene extends Phaser.Scene {
       window.gameState.score = 0;
       window.gameState.health = 100;
       window.gameState.collectedTools = [];
+      window.gameState.collectedSmokeBombs = [];
   }
 
   initializeManagers() {
@@ -164,21 +173,24 @@ export class Level1Scene extends Phaser.Scene {
       this.player.setDepth(10);
   }
 
-  createAssistants() {
-      this.assistants = this.physics.add.group();
-      
-      const positions = [
-          { x: 1200, y: 800 },
-          { x: 2000, y: 400 },
-          { x: 800, y: 1600 },
-          { x: 2400, y: 1300 }
-      ];
-      
-      positions.forEach(pos => {
-          const assistant = new Assistant(this, pos.x, pos.y, 'assistant');
-          this.assistants.add(assistant);
-      });
+  createSidekick() {
+      // Create sidekick slightly behind the player's initial position
+      this.sidekick = new Sidekick(this, this.player.x + 40, this.player.y - 40, 'sidekick');
+      this.sidekick.setDepth(9); // Below player but above most other objects
   }
+
+  createAssistants() {
+    this.assistants = this.physics.add.group();
+    
+    // Get safe positions from maze generator where walls are not present
+    const assistantCount = 8; // Number of assistants to place
+    const positions = this.mazeGenerator.getSafePositions(assistantCount);
+    
+    positions.forEach(pos => {
+        const assistant = new Assistant(this, pos.x, pos.y, 'assistant');
+        this.assistants.add(assistant);
+    });
+}
 
   setupCamera() {
       this.cameras.main.setBounds(0, 0, this.worldWidth, this.worldHeight);
@@ -223,12 +235,6 @@ export class Level1Scene extends Phaser.Scene {
       // Store reference to the tool
       this.currentTool = tool;
       
-      // Play sound effect
-    //   if (this.sound && this.sound.add) {
-    //       const puzzleSound = this.sound.add('puzzle_start', { volume: 0.5 });
-    //       puzzleSound.play();
-    //   }
-      
       // Show message
       this.uiManager.showMessage(`Solve the puzzle to collect the ${tool.toolName || tool.type}!`);
       
@@ -243,6 +249,8 @@ export class Level1Scene extends Phaser.Scene {
               
               if (window.gameState.collectedTools.length >= 3) {
                   this.time.delayedCall(2000, () => {
+                      // Open the exit door here
+                      this.exitManager.openExit();
                       this.uiManager.showMessage('All tools collected! Find the exit!');
                   });
               } else {
@@ -304,19 +312,60 @@ export class Level1Scene extends Phaser.Scene {
   // Spawn smoke bomb collectibles in the maze
   createSmokeBombs() {
       this.smokeBombsGroup = this.physics.add.group();
-      const smokeBombCount = 3;
+      const smokeBombCount = 6;
       const positions = this.mazeGenerator.getSafePositions(smokeBombCount);
       positions.forEach(pos => {
-          const smokeBomb = new Collectible(this, pos.x, pos.y, 'collectible', 'smoke-bomb');
+          const smokeBomb = new Collectible(this, pos.x, pos.y, 'smoke-bomb', 'smoke-bomb');
           this.smokeBombsGroup.add(smokeBomb);
       });
   }
 
   // Handler for collecting smoke bombs
   collectSmokeBomb(player, smokeBomb) {
-      smokeBomb.collect();
-      player.smokeBombs += 1;
-      this.uiManager.updateSmokeBombUI(player.smokeBombs);
-      this.uiManager.showMessage('Collected smoke bomb!');
+      // Instead of collecting immediately, present a puzzle
+      this.collectSmokeBombWithPuzzle(player, smokeBomb);
+  }
+
+  // Handle smoke bomb collection with puzzle
+  collectSmokeBombWithPuzzle(player, smokeBomb) {
+      this.scene.pause();
+      
+      // Store reference to the smoke bomb
+      this.currentSmokeBomb = smokeBomb;
+      
+      // Launch puzzle scene
+      this.scene.launch('PuzzleScene', {
+          puzzleId: Phaser.Math.Between(1, 3),
+          level: Phaser.Math.Between(1, Math.min(2, player.smokeBombs + 1)),
+          parentScene: 'Level1Scene',
+          toolName: 'Smoke Bomb',
+          toolImage: 'smoke-bomb'
+      });
+      
+      // Show message
+      this.uiManager.showMessage('Solve the puzzle to collect the Smoke Bomb!');
+      
+      // Listen for puzzle completion
+      this.events.once('puzzleComplete', (success) => {
+          this.scene.resume();
+          
+          if (success) {
+              // Collect the smoke bomb
+              this.currentSmokeBomb.collect();
+              
+              // Increment player's smoke bomb count
+              player.smokeBombs += 1;
+              
+              // Update the UI
+              this.uiManager.updateSmokeBombUI(player.smokeBombs);
+              
+              // Show a message
+              this.uiManager.showMessage(`Puzzle solved! Collected Smoke Bomb! Total: ${player.smokeBombs}`);
+          } else {
+              this.uiManager.showMessage('Puzzle failed! Try again to collect the Smoke Bomb.');
+          }
+          
+          this.currentSmokeBomb = null;
+      });
   }
 }

@@ -14,7 +14,7 @@ export class ExitManager {
         this.scene.exit.setTint(0xff0000);
         
         // Add a visual indicator
-        this.exitText = this.scene.add.text(3000, 2150, 'EXIT\n(Collect all 3 tools)', {
+        this.exitText = this.scene.add.text(3000, 2150, 'EXIT\n(Collect 3 tool)', {
             font: '20px Arial',
             fill: '#ffffff',
             align: 'center'
@@ -22,7 +22,8 @@ export class ExitManager {
     }
 
     checkExitCondition() {
-        // Check if all tools are collected
+        // Check if at least 1 tool is collected (changed from 3)
+        console.log('Checking exit condition:', window.gameState.collectedTools.length);
         if (window.gameState.collectedTools.length >= 3 && !this.exitOpen) {
             this.openExit();
         }
@@ -120,7 +121,7 @@ export class ExitManager {
         // }
         
         // Show message to player
-        this.scene.uiManager.showMessage('All tools collected! The exit is now open!');
+        this.scene.uiManager.showMessage('Tool collected! The exit is now open!');
     }
 
     isExitOpen() {

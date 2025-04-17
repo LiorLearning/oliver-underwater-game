@@ -70,8 +70,8 @@ export class CollisionManager {
             
             console.log('Processing enemy collision with', assistant);
             
-            // Apply damage to player
-            window.gameState.health = Math.max(0, window.gameState.health - 10);
+            // Apply damage to player - reduce health by 50%
+            window.gameState.health = Math.floor(window.gameState.health * 0.5);
             player.health = window.gameState.health;
             
             // Flash red when taking damage
@@ -96,7 +96,7 @@ export class CollisionManager {
             
             // Update UI
             this.scene.uiManager.updateHealthBar();
-            this.scene.uiManager.showMessage('Hit by enemy! -10 health, invincible for 5 seconds!');
+            this.scene.uiManager.showMessage('Hit by enemy! -50 health, invincible for 5 seconds!');
             
             console.log('Player hit by enemy! Health reduced to:', window.gameState.health);
         };

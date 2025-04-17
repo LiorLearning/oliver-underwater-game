@@ -25,12 +25,14 @@ export class PuzzleScene extends Phaser.Scene {
     this.toolImage = 'wrench';
     this.correctAnswer = null;
     this.ui = {};
+    this.isSmokeBomb = false;
   }
 
   init(data) {
     this.parentScene = data.parentScene;
     this.toolName = data.toolName || 'Tool';
     this.toolImage = data.toolImage || 'wrench';
+    this.isSmokeBomb = this.toolImage === 'smoke-bomb';
   }
 
   create() {
@@ -57,14 +59,7 @@ export class PuzzleScene extends Phaser.Scene {
 
   createTitleAndIcon() {
     const { centerX, centerY, colors, height } = this.config;
-    
-    // Title with better centering
-    this.ui.titleText = this.add.text(centerX, centerY - height/3, `Solve to get the ${this.toolName}`, {
-      font: '28px Arial',
-      fill: '#000000'
-    }).setOrigin(0.5);
-    
-    // Tool image with improved positioning
+    // Tool image positioned centrally below title
     this.ui.toolIcon = this.add.image(centerX, centerY - height/4, this.toolImage)
       .setScale(0.5)
       .setOrigin(0.5);
@@ -107,17 +102,17 @@ export class PuzzleScene extends Phaser.Scene {
     // Shuffle the answers
     Phaser.Utils.Array.Shuffle(answers);
     
-    // Improved button grid alignment
-    const gridSpacing = 10;
-    const buttonCenterX = centerX;
-    const buttonStartY = centerY + 70;
+    // Improved grid layout for better central alignment
+    const gridSpacing = 20;
+    const totalGridWidth = (buttonWidth * 2) + gridSpacing;
+    const startX = centerX - totalGridWidth/2 + buttonWidth/2;
+    const buttonStartY = centerY + 100;
     
-    // Center the buttons as a group
     const positions = [
-      { x: buttonCenterX - buttonWidth - gridSpacing, y: buttonStartY },
-      { x: buttonCenterX + gridSpacing, y: buttonStartY },
-      { x: buttonCenterX - buttonWidth - gridSpacing, y: buttonStartY + buttonHeight + gridSpacing },
-      { x: buttonCenterX + gridSpacing, y: buttonStartY + buttonHeight + gridSpacing }
+      { x: startX, y: buttonStartY },
+      { x: startX + buttonWidth + gridSpacing, y: buttonStartY },
+      { x: startX, y: buttonStartY + buttonHeight + gridSpacing },
+      { x: startX + buttonWidth + gridSpacing, y: buttonStartY + buttonHeight + gridSpacing }
     ];
     
     this.ui.answerButtons = [];
@@ -231,7 +226,6 @@ export class PuzzleScene extends Phaser.Scene {
     const allElements = [
       this.ui.overlay,
       this.ui.dialogBox,
-      this.ui.titleText,
       this.ui.toolIcon,
       this.ui.questionText,
       this.ui.closeButton.background,
@@ -239,6 +233,8 @@ export class PuzzleScene extends Phaser.Scene {
       ...this.ui.answerButtons.flatMap(b => [b.background, b.text])
     ];
     
+    // Add conditional elements only if they exist
+    if (this.ui.titleText) allElements.push(this.ui.titleText);
     if (this.ui.successText) allElements.push(this.ui.successText);
     if (this.ui.rewardText) allElements.push(this.ui.rewardText);
     
@@ -270,14 +266,25 @@ export class PuzzleScene extends Phaser.Scene {
   }
 
   updateGameState() {
-    // Initialize collection if needed
+    // Initialize collections if needed
     if (!window.gameState.collectedTools) {
       window.gameState.collectedTools = [];
     }
     
-    // Add tool if not already collected
-    if (!window.gameState.collectedTools.includes(this.toolImage)) {
-      window.gameState.collectedTools.push(this.toolImage);
+    if (!window.gameState.collectedSmokeBombs) {
+      window.gameState.collectedSmokeBombs = [];
+    }
+    
+    // Add item to the appropriate collection
+    if (this.isSmokeBomb) {
+      // For smoke bombs, just add to the smoke bomb collection
+      // We don't need to check if it's already included since these are consumable
+      window.gameState.collectedSmokeBombs.push(this.toolImage);
+    } else {
+      // For regular tools, only add if not already collected
+      if (!window.gameState.collectedTools.includes(this.toolImage)) {
+        window.gameState.collectedTools.push(this.toolImage);
+      }
     }
     
     // Update score

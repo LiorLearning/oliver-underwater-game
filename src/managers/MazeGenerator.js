@@ -100,8 +100,8 @@ export class MazeGenerator {
         // Collect all valid positions (open spaces)
         const validPositions = [];
         
-        for (let y = 0; y < this.mazeLayout.length; y++) {
-            for (let x = 0; x < this.mazeLayout[y].length; x++) {
+        for (let y = 2; y < this.mazeLayout.length; y++) {
+            for (let x = 2; x < this.mazeLayout[y].length; x++) {
                 if (this.mazeLayout[y][x] === 0) {
                     // This is a path, not a wall - safe to place items here
                     validPositions.push({
