@@ -72,6 +72,9 @@ export class SmokeBomb {
             y: bombY,
             duration: 200,
             onComplete: () => {
+                // Play blast sound when smoke bomb reaches target
+                this.scene.sound.play('blast');
+                
                 // Animate smoke bomb explosion once it reaches target
                 this.scene.tweens.add({
                     targets: smokeBomb,

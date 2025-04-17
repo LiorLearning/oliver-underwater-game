@@ -183,6 +183,9 @@ export class PuzzleScene extends Phaser.Scene {
   handleCorrectAnswer() {
     const { centerX, centerY, colors } = this.config;
     
+    // Play correct sound effect
+    this.sound.play('correct');
+    
     // Disable buttons to prevent multiple answers
     this.ui.answerButtons.forEach(button => button.background.disableInteractive());
     
@@ -207,6 +210,9 @@ export class PuzzleScene extends Phaser.Scene {
 
   handleWrongAnswer() {
     const { centerX, centerY, colors } = this.config;
+    
+    // Play incorrect sound effect
+    this.sound.play('incorrect');
     
     // Create error message
     const errorText = this.add.text(centerX, centerY + 170, 'Try Again', {

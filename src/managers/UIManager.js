@@ -222,10 +222,10 @@ export class UIManager {
         const instructions = [
             "Welcome to the Maze Challenge!",
             "Use arrow keys to move",
-            "Collect coins for points",
             "Find all 3 tools to open the exit",
             "Avoid the red enemies - they will damage you!",
-            "Watch your health bar at the top"
+            "Watch your health bar at the top",
+            "Use smoke bombs (press space) to clear the maze of enemies",
         ];
         
         const instructionBox = this.scene.add.rectangle(

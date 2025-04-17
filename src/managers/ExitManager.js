@@ -54,6 +54,9 @@ export class ExitManager {
         );
         flash.setAlpha(0);
         
+        // Play exit opening sound
+        this.scene.sound.play('exit_open', { volume: 0.7 });
+        
         // Flash sequence
         this.scene.tweens.add({
             targets: flash,
@@ -107,12 +110,6 @@ export class ExitManager {
                 this.scene.cameras.main.shake(500, 0.005);
             }
         });
-        
-        // Play exit appearance sound if available
-        // if (this.scene.sound && this.scene.sound.add) {
-        //     const exitSound = this.scene.sound.add('exit_appear', { volume: 0.8 });
-        //     exitSound.play();
-        // }
         
         // Show message to player
         this.scene.uiManager.showMessage('Tool collected! The exit is now open!');
