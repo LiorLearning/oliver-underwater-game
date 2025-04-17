@@ -34,8 +34,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // Add E key for collecting coins/tools
         this.eKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
         
-        // Bubble trail particles
-        this.createBubbleTrail(scene);
+        // Bubble trail particles - removed
 
         // Player health properties - now using the global gameState
         this.maxHealth = 100;
@@ -60,8 +59,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // Movement logic
         this.handleMovement();
         
-        // Emit bubble particles based on velocity
-        this.updateBubbleEmitter();
+        // Emit bubble particles based on velocity - removed
         
         // Check if player is outside the playable area and restrict movement
         this.checkBounds();
@@ -444,26 +442,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
     
     createBubbleTrail(scene) {
-        // Create particle system for bubble trail effect
-        this.bubbles = scene.add.particles(0, 0, 'particle', {
-            speed: { min: 5, max: 20 },
-            scale: { start: 0.2, end: 0 },
-            lifespan: 2000,
-            alpha: { start: 0.5, end: 0 },
-            tint: 0x3385ff, // Light blue tint
-            blendMode: 'ADD',
-            frequency: -1 // Manual control
-        });
+        // Bubble trail effect disabled
     }
     
     updateBubbleEmitter() {
-        // Only emit bubbles when moving
-        const speed = Math.sqrt(Math.pow(this.body.velocity.x, 2) + Math.pow(this.body.velocity.y, 2));
-        
-        if (speed > 20) {
-            // Emit bubbles from player position
-            this.bubbles.emitParticle(1, this.x, this.y);
-        }
+        // No bubbles to emit
     }
     
     takeDamage(amount = 10) {
