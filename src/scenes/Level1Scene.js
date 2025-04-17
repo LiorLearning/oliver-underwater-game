@@ -32,6 +32,8 @@ export class Level1Scene extends Phaser.Scene {
   }
 
   create() {
+      console.log('Level1Scene create method starting');
+      
       // Reset game state
       this.resetGameState();
       
@@ -56,14 +58,24 @@ export class Level1Scene extends Phaser.Scene {
       
       // Create player and enemies
       this.createPlayer();
+      console.log('Player created:', !!this.player);
+      
       this.createAssistants();
+      console.log('Assistants created:', !!this.assistants);
+      console.log('Number of assistants:', this.assistants ? this.assistants.getChildren().length : 0);
       
       // Setup UI
       this.uiManager.createUI();
       this.miniMapManager.createMiniMap();
       
-      // Setup collisions
-      this.collisionManager.setupCollisions();
+      // Setup collisions - ensure this happens AFTER creating player and assistants
+      console.log('Setting up collisions...');
+      if (this.player && this.assistants && this.assistants.getChildren().length > 0) {
+          this.collisionManager.setupCollisions();
+          console.log('Collisions setup complete');
+      } else {
+          console.error('Cannot setup collisions: player or assistants missing');
+      }
       
       // Setup camera
       this.setupCamera();
@@ -82,6 +94,8 @@ export class Level1Scene extends Phaser.Scene {
               this.uiManager.showMessage(`Puzzle solved! Collected ${this.currentTool.toolName || this.currentTool.type}!`);
           }
       });
+      
+      console.log('Level1Scene create method complete');
   }
 
   update() {
@@ -240,9 +254,31 @@ export class Level1Scene extends Phaser.Scene {
   }
 
   hitEnemy(player, enemy) {
+      console.log('hitEnemy function called');
+      console.log('Player details:', {
+          x: player.x,
+          y: player.y,
+          invulnerable: player.invulnerable,
+          health: window.gameState.health
+      });
+      console.log('Enemy details:', {
+          x: enemy.x,
+          y: enemy.y,
+          active: enemy.active
+      });
+      
+      // Don't process if player is already invulnerable
+      if (player.invulnerable) {
+          console.log('Player is invulnerable, ignoring collision');
+          return;
+      }
+      
       enemy.hitPlayer(player);
       this.uiManager.updateHealthBar();
-      this.uiManager.showMessage('Hit by enemy! -10 health');
+      this.uiManager.showMessage('Hit by enemy! -10 health, invincible for 5 seconds!');
+      
+      // Add additional debugging feedback
+      console.log('Player hit by enemy! Health reduced to:', window.gameState.health);
   }
 
   reachExit(player, exit) {

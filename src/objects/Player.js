@@ -56,6 +56,46 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
     
     update() {
+        // Log position occasionally for debugging
+        const time = this.scene.time.now;
+        if (time % 1000 < 20) {
+            console.log(`Player at (${Math.round(this.x)}, ${Math.round(this.y)}) with velocity (${Math.round(this.body.velocity.x)}, ${Math.round(this.body.velocity.y)})`);
+            
+            // Check distance to all assistants
+            if (this.scene.assistants) {
+                const assistants = this.scene.assistants.getChildren();
+                for (let i = 0; i < assistants.length; i++) {
+                    const assistant = assistants[i];
+                    const distance = Phaser.Math.Distance.Between(
+                        this.x, this.y, assistant.x, assistant.y
+                    );
+                    if (distance < 150) {
+                        console.log(`Player is near assistant ${i} at distance ${Math.round(distance)}`);
+                    }
+                }
+            }
+        }
+        
+        // Manual collision detection to ensure enemies hit the player
+        if (this.scene.assistants && !this.invulnerable) {
+            const assistants = this.scene.assistants.getChildren();
+            for (let i = 0; i < assistants.length; i++) {
+                const assistant = assistants[i];
+                if (!assistant.active) continue;
+                
+                const distance = Phaser.Math.Distance.Between(
+                    this.x, this.y, assistant.x, assistant.y
+                );
+                
+                // Force collision if too close
+                if (distance < 150) {
+                    console.log(`MANUAL COLLISION DETECTED with assistant ${i} at distance ${Math.round(distance)}`);
+                    this.scene.hitEnemy(this, assistant);
+                    break; // Only handle one collision at a time
+                }
+            }
+        }
+        
         // Movement logic
         this.handleMovement();
         
@@ -470,14 +510,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // Flash red when taking damage
         this.setTint(0xff0000);
         
-        // Set invulnerable briefly
+        // Set invulnerable briefly - the assistant's hitPlayer method will 
+        // handle this for assistant collisions with a longer duration
         this.invulnerable = true;
         
-        // Clear tint and reset invulnerability after a delay
-        this.scene.time.delayedCall(this.invulnerableTime, () => {
-            this.clearTint();
-            this.invulnerable = false;
-        });
+        // Only set up the timer if it wasn't already set up by the assistant's hitPlayer method
+        // This is to avoid conflicts between the assistant invulnerability and other damage sources
+        if (this.invulnerableTime === 1000) {
+            // Clear tint and reset invulnerability after the default delay
+            this.scene.time.delayedCall(this.invulnerableTime, () => {
+                this.clearTint();
+                this.invulnerable = false;
+            });
+        }
         
         // Check if health is depleted
         if (window.gameState.health <= 0) {

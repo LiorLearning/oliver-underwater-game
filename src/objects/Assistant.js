@@ -12,12 +12,19 @@ export class Assistant extends Phaser.Physics.Arcade.Sprite {
       this.setCollideWorldBounds(true); // Stay within world bounds
       this.body.setImmovable(false); // Can be pushed by player
       
-      // Set scale
+      // Set scale first
       this.setScale(0.5);
+      
+      // Set a fixed hitbox size instead of a circular one
+      this.body.setSize(80, 80);
+      this.body.setOffset(30, 30);
+      
       this.setDepth(5); // Above background, below player
       
+      // Debug assistant creation
+      console.log(`Assistant created at (${x}, ${y}) with fixed body size ${this.body.width}x${this.body.height}`);
+      
       // Enemy properties
-      this.moveSpeed = 100;
       this.damage = 10;
       this.health = 30;
       this.isDead = false;
@@ -43,29 +50,18 @@ export class Assistant extends Phaser.Physics.Arcade.Sprite {
   }
   
   update(time) {
-      if (this.isDead) return;
+      // Debug position occasionally
+      if (time % 1000 < 20) {
+          console.log(`Assistant at (${Math.round(this.x)}, ${Math.round(this.y)}) with velocity (${Math.round(this.body.velocity.x)}, ${Math.round(this.body.velocity.y)})`);
+      }
       
-      // Move in current direction
-      this.moveInDirection();
+      if (this.isDead) return;
       
       // Random direction change
       this.handleDirectionChange(time);
       
       // Check if stuck
       this.checkIfStuck(time);
-  }
-  
-  moveInDirection() {
-      // Move based on current direction
-      const velocity = this.direction.clone().scale(this.moveSpeed);
-      this.body.setVelocity(velocity.x, velocity.y);
-      
-      // Flip sprite based on movement
-      if (velocity.x < 0) {
-          this.setFlipX(true);
-      } else if (velocity.x > 0) {
-          this.setFlipX(false);
-      }
   }
   
   handleDirectionChange(time) {
@@ -106,8 +102,30 @@ export class Assistant extends Phaser.Physics.Arcade.Sprite {
   
   hitPlayer(player) {
       // Do damage to player if alive
-      if (!this.isDead) {
-          player.takeDamage(this.damage);
+      if (!this.isDead && !player.invulnerable) {
+          // Apply damage to global health
+          window.gameState.health = Math.max(0, window.gameState.health - 10);
+          player.health = window.gameState.health;
+          
+          // Flash red when taking damage
+          player.setTint(0xff0000);
+          
+          // Make player invincible for 5 seconds
+          player.invulnerable = true;
+          player.invulnerableTime = 5000; // 5 seconds
+          
+          // Reset invulnerability after 5 seconds
+          player.scene.time.delayedCall(5000, () => {
+              player.clearTint();
+              player.invulnerable = false;
+              // Reset the invulnerability time back to original
+              player.invulnerableTime = 1000;
+          });
+          
+          // Check if player is defeated
+          if (window.gameState.health <= 0) {
+              player.die();
+          }
       }
   }
   

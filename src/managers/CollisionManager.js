@@ -41,26 +41,85 @@ export class CollisionManager {
     }
 
     _setupEnemyCollisions() {
+        console.log('Setting up enemy collisions');
+        console.log('Assistants group exists:', !!this.scene.assistants);
+        console.log('Number of assistants:', this.scene.assistants ? this.scene.assistants.getChildren().length : 0);
+        console.log('Player exists:', !!this.scene.player);
+        
+        if (!this.scene.assistants || !this.scene.player) {
+            console.error('Missing required game objects for collision setup!');
+            return;
+        }
+        
         // Assistants collide with maze walls
         this.scene.physics.add.collider(this.scene.assistants, this.scene.maze);
         
         // Assistants collide with each other
         this.scene.physics.add.collider(this.scene.assistants, this.scene.assistants);
         
-        // Player collides with assistants (enemies), takes damage
+        // DIRECT COLLISION SETUP - try this approach instead
+        // Create a direct collision handler function that doesn't use process callback
+        const handleEnemyCollision = (player, assistant) => {
+            console.log('Direct enemy collision detected!');
+            
+            // Only handle collision if player is not invulnerable
+            if (player.invulnerable) {
+                console.log('Player is invulnerable, ignoring collision');
+                return;
+            }
+            
+            console.log('Processing enemy collision with', assistant);
+            
+            // Apply damage to player
+            window.gameState.health = Math.max(0, window.gameState.health - 10);
+            player.health = window.gameState.health;
+            
+            // Flash red when taking damage
+            player.setTint(0xff0000);
+            
+            // Make player invincible for 5 seconds
+            player.invulnerable = true;
+            player.invulnerableTime = 5000; // 5 seconds
+            
+            // Reset invulnerability after 5 seconds
+            player.scene.time.delayedCall(5000, () => {
+                player.clearTint();
+                player.invulnerable = false;
+                // Reset the invulnerability time back to original
+                player.invulnerableTime = 1000;
+            });
+            
+            // Check if player is defeated
+            if (window.gameState.health <= 0) {
+                player.die();
+            }
+            
+            // Update UI
+            this.scene.uiManager.updateHealthBar();
+            this.scene.uiManager.showMessage('Hit by enemy! -10 health, invincible for 5 seconds!');
+            
+            console.log('Player hit by enemy! Health reduced to:', window.gameState.health);
+        };
+        
+        // Try both approaches to see which one works:
+        
+        // 1. Regular overlap with scene's hitEnemy method
         this.scene.physics.add.overlap(
             this.scene.player,
             this.scene.assistants,
             this.scene.hitEnemy,
-            this._isCollisionValid,
+            null,  // Try without the process callback
             this.scene
         );
-    }
-
-    _isCollisionValid(player, assistant) {
-        // Only register hit if player and assistant are both active
-        // This helps prevent collision issues
-        return player.active && assistant.active;
+        
+        // 2. Direct collision handler
+        this.scene.physics.add.overlap(
+            this.scene.player,
+            this.scene.assistants,
+            handleEnemyCollision
+        );
+        
+        console.log('Enemy collision setup complete');
     }
 
     _setupCollectibleCollisions() {
