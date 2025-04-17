@@ -14,6 +14,9 @@ export class PreloadScene extends Phaser.Scene {
       
       // Font loading
       this.loadFonts();
+      
+      // Load utilities
+      this.loadUtilities();
   }
 
   create() {
@@ -78,7 +81,7 @@ export class PreloadScene extends Phaser.Scene {
       this.load.image('wall', 'assets/images/wall.png');
       this.load.image('collectible', 'assets/images/collectible.png');
       this.load.image('exit', 'assets/images/exit.png');
-      this.load.image('particle', 'assets/images/collectible.png'); // Using collectible as particle
+      this.load.image('particle', 'assets/images/particle.png');
       
       // UI elements
       this.load.image('button', 'assets/images/button.png');
@@ -87,6 +90,9 @@ export class PreloadScene extends Phaser.Scene {
       this.load.image('wrench', 'assets/images/wrench.png');
       this.load.image('hammer', 'assets/images/hammer.png');
       this.load.image('screwdriver', 'assets/images/screwdriver.png');
+      
+      // Weapons
+      this.load.image('smoke-bomb', 'assets/images/smoke-bomb.png');
   }
 
   loadSpritesheets() {
@@ -117,5 +123,16 @@ export class PreloadScene extends Phaser.Scene {
 
   loadFonts() {
       // No custom fonts for now, using system fonts
+  }
+
+  loadUtilities() {
+      // Import the MathPuzzle utility directly
+      import('../utils/MathPuzzle.js').then(module => {
+          // Make MathPuzzle accessible globally
+          window.MathPuzzle = module.MathPuzzle;
+          console.log('MathPuzzle utility loaded successfully');
+      }).catch(error => {
+          console.error('Failed to load MathPuzzle utility:', error);
+      });
   }
 }

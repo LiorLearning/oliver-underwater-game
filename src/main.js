@@ -18,6 +18,8 @@ window.onload = function() {
             PreloadScene,
             MenuScene,
             Level1Scene,
+            PuzzleScene,
+            ToolSelectScene,
             BossScene
         ]
     };

@@ -34,21 +34,16 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
       if (this.type === 'coin') {
           // Coins are smaller and gold
           this.setScale(0.3);
+          this.setTexture('collectible');
           this.setTint(0xffd700);
           this.value = 10;
       } else {
-          // Tools are larger
+          // Tools are larger and use their own textures
           this.setScale(0.5);
           
-          // Different tints based on tool type
-          const toolColors = {
-              'wrench': 0xaaaaaa,
-              'hammer': 0xaa5555,
-              'screwdriver': 0x5555aa
-          };
-          
-          if (toolColors[this.type]) {
-              this.setTint(toolColors[this.type]);
+          // Set the correct texture based on the tool type
+          if (this.type === 'wrench' || this.type === 'hammer' || this.type === 'screwdriver') {
+              this.setTexture(this.type);
           }
       }
   }
