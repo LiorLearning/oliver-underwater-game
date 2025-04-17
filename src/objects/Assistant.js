@@ -28,7 +28,7 @@ export class Assistant extends Phaser.Physics.Arcade.Sprite {
       this.playerDetectionRadius = 200; // How far the guard can detect the player
       
       // Enemy properties
-      this.damage = this.isGuard ? 50 : 30; // Guards do more damage
+      this.damage = this.isGuard ? 30 : 20; // Guards do more damage
       this.health = this.isGuard ? 50 : 30; // Guards have more health
       this.isDead = false;
       
@@ -129,7 +129,7 @@ export class Assistant extends Phaser.Physics.Arcade.Sprite {
           this.directionChangeCooldown = Phaser.Math.Between(2000, 5000);
           
           // Set velocity based on direction for regular assistants
-          const speed = this.isGuard ? 40 : 60; // Guards move slower in patrol mode
+          const speed = this.isGuard ? 20 : 30; // Guards move slower in patrol mode
           this.body.setVelocity(this.direction.x * speed, this.direction.y * speed);
       }
   }

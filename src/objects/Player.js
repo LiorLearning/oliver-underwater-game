@@ -43,7 +43,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.invulnerableTime = 1000; // ms
         
         // Smoke bomb properties
-        this.smokeBombs = 1;
+        this.smokeBombs = 2;
         this.canDeployBomb = true;
         this.bombCooldown = 1000; // ms
         
