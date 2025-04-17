@@ -62,23 +62,24 @@ export class UIManager {
     }
 
     _createToolsUI() {
-        // Position tools UI at the bottom left
-        const bottomMargin = 100; // Distance from bottom of screen
-        
+        // Position tools UI at the bottom right
+        const bottomMargin = 20; // Distance from bottom of screen
+        const toolsStartX = -50; // Position on right side
+
         // Tool collection status
-        this.toolsText = this.scene.add.text(
-            32, 
-            this.gameHeight - bottomMargin, 
-            'Tools: 0/3', 
-            {
-                font: '24px Arial',
-                fill: '#ffffff'
-            }
-        ).setScrollFactor(0);
+        // this.toolsText = this.scene.add.text(
+        //     toolsStartX, 
+        //     this.gameHeight - bottomMargin, 
+        //     'Tools: 0/3', 
+        //     {
+        //         font: '24px Arial',
+        //         fill: '#ffffff'
+        //     }
+        // ).setScrollFactor(0);
         
         // Create tool icons (fixed positions, initially dimmed)
         const toolTypes = ['wrench', 'hammer', 'screwdriver'];
-        const startX = 32;
+        const startX = toolsStartX;
         const startY = this.gameHeight - bottomMargin + 40;
         const spacing = 55;
         
@@ -105,13 +106,14 @@ export class UIManager {
     }
 
     _createSmokeBombUI() {
-        // Position smoke bomb UI at bottom left, below the tools
-        const bottomMargin = 10; // Distance from bottom of screen
+        // Position smoke bomb UI at bottom left
+        const bottomMargin = 0; // Same margin as tools for consistency
+        const smokeBombX = 100; // Further from edge
         
         // Add smoke bomb UI
         this.smokeBombsText = this.scene.add.text(
-            32, 
-            this.gameHeight - bottomMargin, 
+            smokeBombX, 
+            this.gameHeight - bottomMargin + 50, 
             'Smoke Bombs: 3', 
             {
                 font: '24px Arial',
@@ -121,8 +123,8 @@ export class UIManager {
         
         // Create smoke bomb icon
         this.smokeBombIcon = this.scene.add.image(
-            32, 
-            this.gameHeight - bottomMargin - 30, 
+            smokeBombX, 
+            this.gameHeight - bottomMargin - 20, 
             'smoke-bomb'
         ).setScrollFactor(0)
          .setScale(0.25)
@@ -130,8 +132,8 @@ export class UIManager {
         
         // Instructions for using smoke bombs
         this.scene.add.text(
-            85, 
-            this.gameHeight - bottomMargin - 30, 
+            smokeBombX + 53, 
+            this.gameHeight - bottomMargin - 40, 
             'Press SPACE', 
             {
                 font: '18px Arial',
@@ -165,7 +167,7 @@ export class UIManager {
 
     updateToolsUI() {
         // Update the text display
-        this.toolsText.setText(`Tools: ${window.gameState.collectedTools.length}/3`);
+        // this.toolsText.setText(`Tools: ${window.gameState.collectedTools.length}/3`);
         
         // Update the tool icons
         this.toolIcons.forEach(toolIcon => {
