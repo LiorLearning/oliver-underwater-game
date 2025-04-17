@@ -29,6 +29,9 @@ export class PuzzleScene extends Phaser.Scene {
     this.correctAnswer = null;
     this.ui = {};
     this.isSmokeBomb = false;
+    this.currentProblemIndex = 0;
+    this.totalProblems = 2;
+    this.problems = [];
   }
 
   init(data) {
@@ -57,7 +60,8 @@ export class PuzzleScene extends Phaser.Scene {
 
   createPuzzleContent() {
     this.createTitleAndIcon();
-    this.createMultiplicationPuzzle();
+    this.generateProblems();
+    this.displayCurrentProblem();
   }
 
   createTitleAndIcon() {
@@ -68,27 +72,75 @@ export class PuzzleScene extends Phaser.Scene {
       .setOrigin(0.5);
   }
 
-  createMultiplicationPuzzle() {
-    const { centerX, centerY, colors } = this.config;
+  generateProblems() {
+    // Generate two different problems
+    this.problems = [];
     
-    // Generate multiplication problem
+    // First problem: multiplication
     const num1 = Phaser.Math.Between(1, 10);
     const num2 = Phaser.Math.Between(1, 10);
     const product = num1 * num2;
-    this.correctAnswer = product.toString();
     
-    // Display question with better positioning
-    const questionStr = `${num1} × ${num2} = ?`;
+    this.problems.push({
+      type: 'multiplication',
+      questionStr: `${num1} × ${num2} = ?`,
+      correctAnswer: product.toString(),
+      wrongOptions: this.generateWrongOptions(product, num1, num2)
+    });
+    
+    // Second problem: addition
+    const num3 = Phaser.Math.Between(10, 30);
+    const num4 = Phaser.Math.Between(10, 30);
+    const sum = num3 + num4;
+    
+    this.problems.push({
+      type: 'addition',
+      questionStr: `${num3} + ${num4} = ?`,
+      correctAnswer: sum.toString(),
+      wrongOptions: [
+        (sum + Phaser.Math.Between(1, 5)).toString(),
+        (sum - Phaser.Math.Between(1, 5)).toString(),
+        (sum + 10).toString()
+      ]
+    });
+  }
+
+  displayCurrentProblem() {
+    const { centerX, centerY } = this.config;
+    
+    // Clear any existing problem elements
+    if (this.ui.questionText) this.ui.questionText.destroy();
+    if (this.ui.answerButtons) {
+      this.ui.answerButtons.forEach(button => {
+        button.background.destroy();
+        button.text.destroy();
+      });
+    }
+    
+    // Get current problem
+    const problem = this.problems[this.currentProblemIndex];
+    this.correctAnswer = problem.correctAnswer;
+    
+    // Display problem counter
+    if (this.ui.problemCounter) this.ui.problemCounter.destroy();
+    this.ui.problemCounter = this.add.text(
+      centerX - 300,
+      centerY - 250,
+      `Problem ${this.currentProblemIndex + 1} of ${this.totalProblems}`,
+      { font: '24px Arial', fill: '#000000' }
+    ).setOrigin(0.5);
+    
+    // Display question
     this.ui.questionText = this.add.text(
       centerX,
       centerY,
-      questionStr,
+      problem.questionStr,
       { font: '48px Arial', fill: '#000000', fontWeight: 'bold' }
     ).setOrigin(0.5);
     
-    // Generate options and create answer buttons
-    const wrongOptions = this.generateWrongOptions(product, num1, num2);
-    this.createAnswerOptions([this.correctAnswer, ...wrongOptions]);
+    // Create answer options
+    const answers = [problem.correctAnswer, ...problem.wrongOptions];
+    this.createAnswerOptions(answers);
   }
 
   generateWrongOptions(product, num1, num2) {
@@ -184,7 +236,7 @@ export class PuzzleScene extends Phaser.Scene {
   }
 
   handleCorrectAnswer() {
-    const { centerX, centerY, colors } = this.config;
+    const { centerX, centerY } = this.config;
     
     // Play correct sound effect
     this.sound.play('correct');
@@ -193,22 +245,35 @@ export class PuzzleScene extends Phaser.Scene {
     this.ui.answerButtons.forEach(button => button.background.disableInteractive());
     
     // Success message
+    if (this.ui.successText) this.ui.successText.destroy();
     this.ui.successText = this.add.text(centerX, centerY + 170, 'Correct!', {
       font: '48px Arial',
       fill: '#2ecc71',
       fontWeight: 'bold'
     }).setOrigin(0.5);
     
-    // Reward message
-    this.ui.rewardText = this.add.text(centerX, centerY + 220, `You earned the ${this.toolName}!`, {
-      font: '24px Arial',
-      fill: '#000000'
-    }).setOrigin(0.5);
+    // Move to next problem or complete puzzle
+    this.currentProblemIndex++;
     
-    // Close after delay
-    this.time.delayedCall(2000, () => {
-      this.closePuzzle(true);
-    });
+    if (this.currentProblemIndex < this.totalProblems) {
+      // Continue to next problem after delay
+      this.time.delayedCall(1000, () => {
+        if (this.ui.successText) this.ui.successText.destroy();
+        this.displayCurrentProblem();
+      });
+    } else {
+      // All problems completed - reward message
+      if (this.ui.rewardText) this.ui.rewardText.destroy();
+      this.ui.rewardText = this.add.text(centerX, centerY + 220, `You earned the ${this.toolName}!`, {
+        font: '24px Arial',
+        fill: '#000000'
+      }).setOrigin(0.5);
+      
+      // Close after delay
+      this.time.delayedCall(2000, () => {
+        this.closePuzzle(true);
+      });
+    }
   }
 
   handleWrongAnswer() {

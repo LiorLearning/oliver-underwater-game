@@ -28,7 +28,7 @@ export class Assistant extends Phaser.Physics.Arcade.Sprite {
       this.playerDetectionRadius = 200; // How far the guard can detect the player
       
       // Enemy properties
-      this.damage = this.isGuard ? 60 : 50; // Guards do more damage
+      this.damage = this.isGuard ? 50 : 30; // Guards do more damage
       this.health = this.isGuard ? 50 : 30; // Guards have more health
       this.isDead = false;
       
@@ -161,11 +161,11 @@ export class Assistant extends Phaser.Physics.Arcade.Sprite {
       }
   }
   
-  hitPlayer(player) {
+  hitPlayer(player, damage = 30) {
       // Do damage to player if alive
       if (!this.isDead && !player.invulnerable) {
           // Apply damage to global health
-          window.gameState.health = Math.max(0, window.gameState.health - 50);
+          window.gameState.health = Math.max(0, window.gameState.health - damage);
           player.health = window.gameState.health;
           
           // Flash red when taking damage

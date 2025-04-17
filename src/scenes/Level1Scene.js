@@ -293,7 +293,8 @@ export class Level1Scene extends Phaser.Scene {
       console.log('Enemy details:', {
           x: enemy.x,
           y: enemy.y,
-          active: enemy.active
+          active: enemy.active,
+          isGuard: enemy.isGuard
       });
       
       // Don't process if player is already invulnerable
@@ -302,9 +303,9 @@ export class Level1Scene extends Phaser.Scene {
           return;
       }
       
-      enemy.hitPlayer(player);
+      enemy.hitPlayer(player, enemy.isGuard ? 50 : 30);
       this.uiManager.updateHealthBar();
-      this.uiManager.showMessage('Hit by enemy! -50 health, invincible for 5 seconds!');
+      this.uiManager.showMessage('Hit by enemy! invincible for 5 seconds!');
       
       // Add additional debugging feedback
       console.log('Player hit by enemy! Health reduced to:', window.gameState.health);
