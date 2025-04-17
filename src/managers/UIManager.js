@@ -202,4 +202,10 @@ export class UIManager {
             continueButton.destroy();
         });
     }
+
+    updateSmokeBombCount(count) {
+        if (this.smokeBombsText) {
+            this.smokeBombsText.setText(`Smoke Bombs: ${count}`);
+        }
+    }
 } 

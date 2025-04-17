@@ -1,205 +1,197 @@
 export class PuzzleScene extends Phaser.Scene {
   constructor() {
       super('PuzzleScene');
-      this.puzzleId = null;
-      this.level = null;
+    this.config = {
+      width: 1000,
+      height: 800,
+      centerX: 800,
+      centerY: 600,
+      colors: {
+        primary: 0x3498db,
+        primaryDark: 0x2980b9,
+        secondary: 0x27ae60,
+        secondaryDark: 0x219653,
+        background: 0xecf0f1,
+        success: 0x2ecc71,
+        successDark: 0x27ae60,
+        error: 0xe74c3c,
+        errorDark: 0xc0392b,
+        text: 0x2c3e50,
+        lightText: 0xffffff
+      }
+    };
       this.parentScene = null;
       this.correctAnswer = null;
       this.toolName = 'Tool';
-      this.toolImage = 'wrench'; // Default to wrench if no image specified
+    this.toolImage = 'wrench';
+    this.difficulty = 1;
   }
 
   init(data) {
-      this.puzzleId = data.puzzleId;
-      this.level = data.level;
       this.parentScene = data.parentScene;
       this.toolName = data.toolName || 'Tool';
-      this.toolImage = data.toolImage || 'wrench'; // Default to wrench if no image specified
+    this.toolImage = data.toolImage || 'wrench';
+    this.difficulty = data.level || 1;
   }
 
   create() {
-      // Create dialog box background
-      this.createDialogBox();
-      
-      // Create puzzle based on ID
-      this.createPuzzle();
-      
-      // Create UI buttons
+    this.createBackground();
+    this.createFractionPuzzle();
       this.createButtons();
-      
-      // Add sidekick with helpful hints
       this.createSidekick();
   }
 
-  createDialogBox() {
-      const width = 1000;
-      const height = 800;
-      
-      // Semi-transparent dark overlay for background
-      this.overlay = this.add.rectangle(800, 600, 1600, 1200, 0x000000, 0.7);
-      
-      // Dialog box background with rounded corners using a Graphics object
-      this.dialogBoxGraphics = this.add.graphics();
-      this.dialogBoxGraphics.fillStyle(0x3498db, 1);
-      this.dialogBoxGraphics.lineStyle(4, 0x2980b9);
-      this.dialogBoxGraphics.fillRoundedRect(800 - width/2, 600 - height/2, width, height, 20);
-      this.dialogBoxGraphics.strokeRoundedRect(800 - width/2, 600 - height/2, width, height, 20);
-      
-      // Create an invisible hitarea for interaction
-      this.dialogBox = this.add.zone(800, 600, width, height).setInteractive();
-      this.dialogBox.input.hitArea.setTo(-width/2, -height/2, width, height);
-      
-      // Dialog header with rounded corners
-      this.headerGraphics = this.add.graphics();
-      this.headerGraphics.fillStyle(0x2980b9, 1);
-      this.headerGraphics.fillRoundedRect(800 - width/2, 400 - 50, width, 100, 20);
+  createBackground() {
+    const { width, height, centerX, centerY, colors } = this.config;
+    
+    // Semi-transparent overlay
+    this.overlay = this.add.rectangle(centerX, centerY, 1600, 1200, 0x000000, 0.7);
+    
+    // Dialog box
+    this.dialogBox = this.createRoundedRectangle(
+      centerX - width/2, 
+      centerY - height/2, 
+      width, 
+      height, 
+      colors.primary, 
+      colors.primaryDark,
+      20
+    );
+    
+    // Header
+    this.headerBox = this.createRoundedRectangle(
+      centerX - width/2, 
+      centerY - height/2, 
+      width, 
+      100, 
+      colors.primaryDark, 
+      null,
+      { topLeft: 20, topRight: 20, bottomLeft: 0, bottomRight: 0 }
+    );
       
       // Title text
-      this.titleText = this.add.text(800, 400, `Solve to get the ${this.toolName}`, {
+    this.titleText = this.add.text(centerX, centerY - height/2 + 50, `Solve to get the ${this.toolName}`, {
           font: '40px Arial',
           fill: '#ffffff',
           fontStyle: 'bold'
       }).setOrigin(0.5);
       
-      // Puzzle ID text
-      this.puzzleIdText = this.add.text(800, 450, `Puzzle ${this.puzzleId} - Level ${this.level}`, {
-          font: '28px Arial',
-          fill: '#ffffff'
-      }).setOrigin(0.5);
-      
-      // Display tool image in a circular frame
-      this.toolCircle = this.add.circle(800, 530, 80, 0xffffff);
-      this.toolImage = this.add.image(800, 530, this.toolImage)
-          .setScale(0.6)
+    // Tool circle background
+    this.toolCircle = this.add.circle(centerX, centerY - height/2 + 170, 60, 0xffffff);
+    
+    // Tool image
+    this.toolImage = this.add.image(centerX, centerY - height/2 + 170, this.toolImage)
+      .setScale(0.5)
           .setOrigin(0.5);
       
-      // Add decorative elements
-      this.add.rectangle(550, 400, 10, 100, 0xe74c3c);
-      this.add.rectangle(1050, 400, 10, 100, 0xe74c3c);
+    // Decorative elements
+    this.add.rectangle(centerX - 250, centerY - height/2 + 50, 6, 70, colors.error);
+    this.add.rectangle(centerX + 250, centerY - height/2 + 50, 6, 70, colors.error);
   }
 
-  createPuzzle() {
-      // Check if MathPuzzle utility is available
-      if (window.MathPuzzle) {
-          // Create a new instance with the current level
-          const mathPuzzle = new window.MathPuzzle(this.level);
-          
-          // Generate different puzzles based on ID
-          switch(this.puzzleId) {
-              case 1:
-                  this.puzzleData = mathPuzzle.generatePuzzle('multiplication');
-                  break;
-              case 2:
-                  this.puzzleData = mathPuzzle.generatePuzzle('fraction');
-                  break;
-              case 3:
-                  this.puzzleData = mathPuzzle.generatePuzzle('pattern');
-                  break;
-              default:
-                  // If no specific puzzle type, generate a random one
-                  this.puzzleData = mathPuzzle.generatePuzzle();
-          }
-          
-          // Get the correct answer from puzzle data
-          this.correctAnswer = this.puzzleData.answer;
+  createRoundedRectangle(x, y, width, height, fillColor, strokeColor, radius) {
+    const graphics = this.add.graphics();
+    
+    // Fill
+    if (fillColor !== null) {
+      graphics.fillStyle(fillColor, 1);
+      
+      if (typeof radius === 'object') {
+        graphics.fillRoundedRect(x, y, width, height, radius);
       } else {
-          // Fallback to built-in puzzle creation methods if MathPuzzle isn't available
-          console.warn('MathPuzzle utility not available, using built-in methods');
-          switch(this.puzzleId) {
-              case 1:
-                  this.createMultiplicationPuzzle();
-                  return;
-              case 2:
-                  this.createFractionPuzzle();
-                  return;
-              case 3:
-                  this.createPatternPuzzle();
-                  return;
-              default:
-                  this.createMultiplicationPuzzle();
-                  return;
-          }
+        graphics.fillRoundedRect(x, y, width, height, radius);
       }
+    }
+    
+    // Stroke
+    if (strokeColor !== null) {
+      graphics.lineStyle(4, strokeColor);
       
-      // Add question background with rounded corners using graphics
-      this.questionGraphics = this.add.graphics();
-      this.questionGraphics.fillStyle(0xecf0f1, 0.9);
-      this.questionGraphics.lineStyle(2, 0xbdc3c7);
-      this.questionGraphics.fillRoundedRect(800 - 300, 650 - 60, 600, 120, 15);
-      this.questionGraphics.strokeRoundedRect(800 - 300, 650 - 60, 600, 120, 15);
-      
-      // Display problem - handle multi-line questions
-      const question = this.puzzleData.question;
-      if (question.includes('\n')) {
-          // Split multi-line questions
-          const lines = question.split('\n');
-          
-          // First line
-          this.add.text(800, 630, lines[0], {
-              font: '38px Arial',
-              fill: '#2c3e50',
-              fontStyle: 'bold'
-          }).setOrigin(0.5);
-          
-          // Second line (with potentially larger font for the sequence)
-          this.add.text(800, 680, lines[1], {
-              font: '46px Arial',
-              fill: '#2c3e50',
-              fontStyle: 'bold'
-          }).setOrigin(0.5);
+      if (typeof radius === 'object') {
+        graphics.strokeRoundedRect(x, y, width, height, radius);
       } else {
-          // Single line question
-          this.add.text(800, 650, question, {
-              font: '50px Arial',
-              fill: '#2c3e50',
-              fontStyle: 'bold'
-          }).setOrigin(0.5);
+        graphics.strokeRoundedRect(x, y, width, height, radius);
       }
-      
-      // Add hint if provided in puzzle data
-      if (this.puzzleData.hint) {
-          this.hintText = this.add.text(800, 710, "Hint: " + this.puzzleData.hint, {
-              font: '24px Arial',
-              fill: '#7f8c8d'
-          }).setOrigin(0.5).setAlpha(0); // Start hidden
-      }
-      
-      // Create input options using the options from puzzle data
-      this.createAnswerOptions(this.puzzleData.options);
-  }
-
-  createMultiplicationPuzzle() {
-      // Create a simple multiplication puzzle
-      const num1 = Phaser.Math.Between(2, 10);
-      const num2 = Phaser.Math.Between(2, 10);
-      this.correctAnswer = num1 * num2;
-      
-      // Add question background with rounded corners using graphics
-      this.questionGraphics = this.add.graphics();
-      this.questionGraphics.fillStyle(0xecf0f1, 0.9);
-      this.questionGraphics.lineStyle(2, 0xbdc3c7);
-      this.questionGraphics.fillRoundedRect(800 - 300, 650 - 60, 600, 120, 15);
-      this.questionGraphics.strokeRoundedRect(800 - 300, 650 - 60, 600, 120, 15);
-      
-      // Display problem
-      this.add.text(800, 650, `${num1} × ${num2} = ?`, {
-          font: '60px Arial',
-          fill: '#2c3e50',
-          fontStyle: 'bold'
-      }).setOrigin(0.5);
-      
-      // Create input options
-      this.createAnswerOptions([
-          this.correctAnswer,
-          this.correctAnswer + Phaser.Math.Between(1, 5),
-          this.correctAnswer - Phaser.Math.Between(1, 5),
-          this.correctAnswer + Phaser.Math.Between(6, 10)
-      ]);
+    }
+    
+    return graphics;
   }
 
   createFractionPuzzle() {
-      // Create a simple fraction addition puzzle
-      const denominator = Phaser.Math.Between(2, 10);
+    const { centerX, centerY, colors } = this.config;
+    
+    // Generate fraction problem based on difficulty
+    const problem = this.generateFractionProblem(this.difficulty);
+    
+    // Question background
+    this.questionBox = this.createRoundedRectangle(
+      centerX - 350, 
+      centerY - 60, 
+      700, 
+      120, 
+      colors.background, 
+      0xbdc3c7,
+      15
+    );
+      
+      // Display problem
+    this.questionText = this.add.text(
+      centerX, 
+      centerY, 
+      problem.question, 
+      {
+        font: '50px Arial',
+        fill: colors.text,
+          fontStyle: 'bold'
+      }
+    ).setOrigin(0.5);
+    
+    // Set correct answer
+    this.correctAnswer = problem.answer;
+    
+    // Create answer options
+    this.createAnswerOptions(problem.options);
+    
+    // Add hint if available
+    if (problem.hint) {
+      this.hintText = this.add.text(
+        centerX, 
+        centerY + 70, 
+        "Hint: " + problem.hint, 
+        {
+          font: '24px Arial',
+          fill: '#7f8c8d'
+        }
+      ).setOrigin(0.5).setAlpha(0);
+    }
+  }
+
+  generateFractionProblem(difficulty) {
+    // Adjust denominator range based on difficulty
+    let denominatorRange = { min: 2, max: 5 };
+    if (difficulty === 2) denominatorRange = { min: 2, max: 8 };
+    if (difficulty >= 3) denominatorRange = { min: 2, max: 12 };
+    
+    // Generate different types of fraction problems
+    const problemType = Phaser.Math.Between(1, 3);
+    
+    switch(problemType) {
+      case 1:
+        // Same denominator addition
+        return this.generateSameDenominatorProblem(denominatorRange);
+      case 2:
+        // Different denominator addition (simple)
+        return this.generateDifferentDenominatorProblem(denominatorRange);
+      case 3:
+        // Mixed number addition
+        return this.generateMixedNumberProblem(denominatorRange);
+      default:
+        return this.generateSameDenominatorProblem(denominatorRange);
+    }
+  }
+
+  generateSameDenominatorProblem(range) {
+    const denominator = Phaser.Math.Between(range.min, range.max);
       const numerator1 = Phaser.Math.Between(1, denominator - 1);
       const numerator2 = Phaser.Math.Between(1, denominator - 1);
       
@@ -209,36 +201,22 @@ export class PuzzleScene extends Phaser.Scene {
       
       // Simplify fraction
       const gcd = this.calculateGCD(sumNumerator, sumDenominator);
-      sumNumerator = sumNumerator / gcd;
-      sumDenominator = sumDenominator / gcd;
+    const simplifiedNumerator = sumNumerator / gcd;
+    const simplifiedDenominator = sumDenominator / gcd;
       
-      this.correctAnswer = `${sumNumerator}/${sumDenominator}`;
+    let answer = `${simplifiedNumerator}/${simplifiedDenominator}`;
       
       // Handle improper fractions
-      if (sumNumerator >= sumDenominator) {
-          const wholeNumber = Math.floor(sumNumerator / sumDenominator);
-          const remainder = sumNumerator % sumDenominator;
+    if (simplifiedNumerator >= simplifiedDenominator) {
+      const wholeNumber = Math.floor(simplifiedNumerator / simplifiedDenominator);
+      const remainder = simplifiedNumerator % simplifiedDenominator;
           
           if (remainder === 0) {
-              this.correctAnswer = `${wholeNumber}`;
+        answer = `${wholeNumber}`;
           } else {
-              this.correctAnswer = `${wholeNumber} ${remainder}/${sumDenominator}`;
-          }
+        answer = `${wholeNumber} ${remainder}/${simplifiedDenominator}`;
       }
-      
-      // Add question background with rounded corners using graphics
-      this.questionGraphics = this.add.graphics();
-      this.questionGraphics.fillStyle(0xecf0f1, 0.9);
-      this.questionGraphics.lineStyle(2, 0xbdc3c7);
-      this.questionGraphics.fillRoundedRect(800 - 300, 650 - 60, 600, 120, 15);
-      this.questionGraphics.strokeRoundedRect(800 - 300, 650 - 60, 600, 120, 15);
-      
-      // Display problem
-      this.add.text(800, 650, `${numerator1}/${denominator} + ${numerator2}/${denominator} = ?`, {
-          font: '50px Arial',
-          fill: '#2c3e50',
-          fontStyle: 'bold'
-      }).setOrigin(0.5);
+    }
       
       // Generate wrong answers that look plausible
       const wrongAnswers = [
@@ -247,128 +225,189 @@ export class PuzzleScene extends Phaser.Scene {
           `${numerator1 + numerator2 + 1}/${denominator}`
       ];
       
-      // Create input options
-      this.createAnswerOptions([
-          this.correctAnswer,
-          ...wrongAnswers
-      ]);
+    return {
+      question: `${numerator1}/${denominator} + ${numerator2}/${denominator} = ?`,
+      answer: answer,
+      options: [answer, ...wrongAnswers],
+      hint: "Add the numerators, keep the same denominator, and simplify if needed."
+    };
   }
 
-  createPatternPuzzle() {
-      // Create a pattern recognition puzzle
-      const patterns = [
-          {
-              sequence: [2, 4, 6, 8],
-              next: 10,
-              rule: "Add 2"
-          },
-          {
-              sequence: [1, 3, 9, 27],
-              next: 81,
-              rule: "Multiply by 3"
-          },
-          {
-              sequence: [1, 4, 9, 16],
-              next: 25,
-              rule: "Square numbers"
-          }
-      ];
+  generateDifferentDenominatorProblem(range) {
+    // Create fractions with different but related denominators
+    const denominator1 = Phaser.Math.Between(range.min, range.max);
+    const denominator2 = Phaser.Math.Between(range.min, range.max);
+    
+    // Ensure denominators are different
+    if (denominator1 === denominator2) {
+      return this.generateSameDenominatorProblem(range);
+    }
+    
+    const numerator1 = Phaser.Math.Between(1, denominator1 - 1);
+    const numerator2 = Phaser.Math.Between(1, denominator2 - 1);
+    
+    // Calculate the least common multiple
+    const lcm = (denominator1 * denominator2) / this.calculateGCD(denominator1, denominator2);
+    
+    // Convert fractions to common denominator
+    const newNumerator1 = numerator1 * (lcm / denominator1);
+    const newNumerator2 = numerator2 * (lcm / denominator2);
+    
+    // Calculate sum
+    let sumNumerator = newNumerator1 + newNumerator2;
+    let sumDenominator = lcm;
+    
+    // Simplify
+    const gcd = this.calculateGCD(sumNumerator, sumDenominator);
+    const simplifiedNumerator = sumNumerator / gcd;
+    const simplifiedDenominator = sumDenominator / gcd;
+    
+    let answer = `${simplifiedNumerator}/${simplifiedDenominator}`;
+    
+    // Handle improper fractions
+    if (simplifiedNumerator >= simplifiedDenominator) {
+      const wholeNumber = Math.floor(simplifiedNumerator / simplifiedDenominator);
+      const remainder = simplifiedNumerator % simplifiedDenominator;
       
-      // Pick a random pattern
-      const pattern = Phaser.Utils.Array.GetRandom(patterns);
-      this.correctAnswer = pattern.next;
-      
-      // Add question background with rounded corners using graphics
-      this.questionGraphics = this.add.graphics();
-      this.questionGraphics.fillStyle(0xecf0f1, 0.9);
-      this.questionGraphics.lineStyle(2, 0xbdc3c7);
-      this.questionGraphics.fillRoundedRect(800 - 350, 630 - 75, 700, 150, 15);
-      this.questionGraphics.strokeRoundedRect(800 - 350, 630 - 75, 700, 150, 15);
-      
-      // Display problem
-      this.add.text(800, 600, "What number comes next in this pattern?", {
-          font: '36px Arial',
-          fill: '#2c3e50',
-          fontStyle: 'bold'
-      }).setOrigin(0.5);
-      
-      this.add.text(800, 650, pattern.sequence.join(", ") + ", ?", {
-          font: '48px Arial',
-          fill: '#2c3e50',
-          fontWeight: 'bold'
-      }).setOrigin(0.5);
-      
-      // Add hint text
-      this.hintText = this.add.text(800, 710, "Hint: " + pattern.rule, {
-          font: '24px Arial',
-          fill: '#7f8c8d'
-      }).setOrigin(0.5);
-      
-      // Generate wrong answers
+      if (remainder === 0) {
+        answer = `${wholeNumber}`;
+      } else {
+        answer = `${wholeNumber} ${remainder}/${simplifiedDenominator}`;
+      }
+    }
+    
+    // Generate plausible wrong answers
+    const wrongAnswers = [
+      `${numerator1 + numerator2}/${denominator1 + denominator2}`,
+      `${numerator1 * numerator2}/${denominator1 * denominator2}`,
+      `${numerator1}/${denominator1} - ${numerator2}/${denominator2}`
+    ];
+    
+    return {
+      question: `${numerator1}/${denominator1} + ${numerator2}/${denominator2} = ?`,
+      answer: answer,
+      options: [answer, ...wrongAnswers],
+      hint: "Find a common denominator first!"
+    };
+  }
+
+  generateMixedNumberProblem(range) {
+    const denominator = Phaser.Math.Between(range.min, range.max);
+    
+    // Generate mixed numbers
+    const wholeNumber1 = Phaser.Math.Between(1, 3);
+    const numerator1 = Phaser.Math.Between(1, denominator - 1);
+    
+    const wholeNumber2 = Phaser.Math.Between(1, 2);
+    const numerator2 = Phaser.Math.Between(1, denominator - 1);
+    
+    // Calculate improper fractions
+    const improperNumerator1 = (wholeNumber1 * denominator) + numerator1;
+    const improperNumerator2 = (wholeNumber2 * denominator) + numerator2;
+    
+    // Add fractions
+    let sumNumerator = improperNumerator1 + improperNumerator2;
+    let sumDenominator = denominator;
+    
+    // Simplify
+    const gcd = this.calculateGCD(sumNumerator, sumDenominator);
+    const simplifiedNumerator = sumNumerator / gcd;
+    const simplifiedDenominator = sumDenominator / gcd;
+    
+    // Convert to mixed number
+    const wholeNumber = Math.floor(simplifiedNumerator / simplifiedDenominator);
+    const remainder = simplifiedNumerator % simplifiedDenominator;
+    
+    let answer;
+    if (remainder === 0) {
+      answer = `${wholeNumber}`;
+    } else {
+      answer = `${wholeNumber} ${remainder}/${simplifiedDenominator}`;
+    }
+    
+    // Generate plausible wrong answers
       const wrongAnswers = [
-          pattern.next + 1,
-          pattern.next - 1,
-          pattern.sequence[pattern.sequence.length - 1] + 1
-      ];
-      
-      // Create input options
-      this.createAnswerOptions([
-          this.correctAnswer,
-          ...wrongAnswers
-      ]);
+      `${wholeNumber1 + wholeNumber2} ${numerator1 + numerator2}/${denominator}`,
+      `${wholeNumber1 + wholeNumber2} ${Math.abs(numerator1 - numerator2)}/${denominator}`,
+      `${wholeNumber1 + wholeNumber2 + 1}`
+    ];
+    
+    return {
+      question: `${wholeNumber1} ${numerator1}/${denominator} + ${wholeNumber2} ${numerator2}/${denominator} = ?`,
+      answer: answer,
+      options: [answer, ...wrongAnswers],
+      hint: "Convert to improper fractions first, then add!"
+    };
   }
 
   createAnswerOptions(answers) {
+    const { centerX, centerY, colors } = this.config;
+    
       // Shuffle the answers
       Phaser.Utils.Array.Shuffle(answers);
       
-      // Create button positions
+    // Button positioning
       const positions = [
-          { x: 650, y: 750 },
-          { x: 950, y: 750 },
-          { x: 650, y: 850 },
-          { x: 950, y: 850 }
+      { x: centerX - 150, y: centerY + 150 },
+      { x: centerX + 150, y: centerY + 150 },
+      { x: centerX - 150, y: centerY + 250 },
+      { x: centerX + 150, y: centerY + 250 }
       ];
       
       // Create buttons for each answer
+    this.answerButtons = [];
+    
       answers.forEach((answer, index) => {
-          // Create button graphics with rounded corners
-          const buttonGraphics = this.add.graphics();
-          buttonGraphics.fillStyle(0x3498db, 1);
-          buttonGraphics.lineStyle(3, 0x2980b9);
-          buttonGraphics.fillRoundedRect(positions[index].x - 120, positions[index].y - 40, 240, 80, 15);
-          buttonGraphics.strokeRoundedRect(positions[index].x - 120, positions[index].y - 40, 240, 80, 15);
-          
-          // Create interactive zone for button
-          const button = this.add.zone(positions[index].x, positions[index].y, 240, 80).setInteractive();
+      // Create button container
+      const button = this.add.container(positions[index].x, positions[index].y);
+      this.answerButtons.push(button);
+      
+      // Create button background
+      const bg = this.createRoundedRectangle(
+        -110, 
+        -40, 
+        220, 
+        80, 
+        colors.primary, 
+        colors.primaryDark,
+        15
+      );
+      button.add(bg);
           
           // Add text
           const text = this.add.text(
-              positions[index].x,
-              positions[index].y,
+        0,
+        0,
               answer.toString(),
               {
                   font: '32px Arial',
-                  fill: '#ffffff',
+          fill: colors.lightText,
                   fontWeight: 'bold'
               }
           ).setOrigin(0.5);
+      button.add(text);
+      
+      // Make interactive
+      button.setSize(220, 80);
+      button.setInteractive(new Phaser.Geom.Rectangle(-110, -40, 220, 80), Phaser.Geom.Rectangle.Contains);
           
           // Button hover effect
           button.on('pointerover', () => {
-              buttonGraphics.clear();
-              buttonGraphics.fillStyle(0x2980b9, 1);
-              buttonGraphics.lineStyle(3, 0x2980b9);
-              buttonGraphics.fillRoundedRect(positions[index].x - 126, positions[index].y - 42, 252, 84, 15);
-              buttonGraphics.strokeRoundedRect(positions[index].x - 126, positions[index].y - 42, 252, 84, 15);
+        this.tweens.add({
+          targets: button,
+          scaleX: 1.05,
+          scaleY: 1.05,
+          duration: 100
+        });
           });
           
           button.on('pointerout', () => {
-              buttonGraphics.clear();
-              buttonGraphics.fillStyle(0x3498db, 1);
-              buttonGraphics.lineStyle(3, 0x2980b9);
-              buttonGraphics.fillRoundedRect(positions[index].x - 120, positions[index].y - 40, 240, 80, 15);
-              buttonGraphics.strokeRoundedRect(positions[index].x - 120, positions[index].y - 40, 240, 80, 15);
+        this.tweens.add({
+          targets: button,
+          scaleX: 1,
+          scaleY: 1,
+          duration: 100
+        });
           });
           
           // Check answer when clicked
@@ -379,69 +418,94 @@ export class PuzzleScene extends Phaser.Scene {
   }
 
   createButtons() {
-      // Add hint button with icon using graphics for rounded corners
-      const hintButtonGraphics = this.add.graphics();
-      hintButtonGraphics.fillStyle(0x27ae60, 1);
-      hintButtonGraphics.lineStyle(3, 0x219653);
-      hintButtonGraphics.fillRoundedRect(800 - 100, 950 - 30, 200, 60, 15);
-      hintButtonGraphics.strokeRoundedRect(800 - 100, 950 - 30, 200, 60, 15);
-      
-      // Create interactive zone for hint button
-      const hintButton = this.add.zone(800, 950, 200, 60).setInteractive();
-      
-      this.add.text(800, 950, 'Get Hint', {
+    const { centerX, colors } = this.config;
+    
+    // Create hint button
+    this.hintButton = this.add.container(centerX, 950);
+    
+    // Button background
+    const hintBg = this.createRoundedRectangle(
+      -100, 
+      -30, 
+      200, 
+      60, 
+      colors.secondary, 
+      colors.secondaryDark,
+      15
+    );
+    this.hintButton.add(hintBg);
+    
+    // Button text
+    const hintText = this.add.text(
+      0,
+      0,
+      'Get Hint',
+      {
           font: '28px Arial',
-          fill: '#ffffff',
+        fill: colors.lightText,
           fontWeight: 'bold'
-      }).setOrigin(0.5);
+      }
+    ).setOrigin(0.5);
+    this.hintButton.add(hintText);
+    
+    // Make interactive
+    this.hintButton.setSize(200, 60);
+    this.hintButton.setInteractive(new Phaser.Geom.Rectangle(-100, -30, 200, 60), Phaser.Geom.Rectangle.Contains);
       
       // Button effects
-      hintButton.on('pointerover', () => {
-          hintButtonGraphics.clear();
-          hintButtonGraphics.fillStyle(0x219653, 1);
-          hintButtonGraphics.lineStyle(3, 0x219653);
-          hintButtonGraphics.fillRoundedRect(800 - 105, 950 - 31.5, 210, 63, 15);
-          hintButtonGraphics.strokeRoundedRect(800 - 105, 950 - 31.5, 210, 63, 15);
+    this.hintButton.on('pointerover', () => {
+      this.tweens.add({
+        targets: this.hintButton,
+        scaleX: 1.05,
+        scaleY: 1.05,
+        duration: 100
       });
-      
-      hintButton.on('pointerout', () => {
-          hintButtonGraphics.clear();
-          hintButtonGraphics.fillStyle(0x27ae60, 1);
-          hintButtonGraphics.lineStyle(3, 0x219653);
-          hintButtonGraphics.fillRoundedRect(800 - 100, 950 - 30, 200, 60, 15);
-          hintButtonGraphics.strokeRoundedRect(800 - 100, 950 - 30, 200, 60, 15);
+    });
+    
+    this.hintButton.on('pointerout', () => {
+      this.tweens.add({
+        targets: this.hintButton,
+        scaleX: 1,
+        scaleY: 1,
+        duration: 100
       });
-      
-      hintButton.on('pointerdown', () => {
+    });
+    
+    this.hintButton.on('pointerdown', () => {
           this.showHint();
       });
   }
 
   createSidekick() {
+    const { centerX, centerY } = this.config;
+    
       // Add sidekick character
-      this.sidekick = this.add.image(450, 850, 'sidekick')
+    this.sidekick = this.add.image(centerX - 350, centerY + 250, 'sidekick')
           .setScale(0.35)
           .setOrigin(0.5);
       
-      // Add thought bubble with rounded corners using graphics
-      this.bubbleGraphics = this.add.graphics();
-      this.bubbleGraphics.fillStyle(0xffffff, 1);
-      this.bubbleGraphics.lineStyle(3, 0xbdc3c7);
-      this.bubbleGraphics.fillRoundedRect(520 - 90, 780 - 50, 180, 100, 15);
-      this.bubbleGraphics.strokeRoundedRect(520 - 90, 780 - 50, 180, 100, 15);
-      this.bubbleGraphics.setAlpha(0);
-          
-      this.bubbleText = this.add.text(520, 780, '', {
+    // Add thought bubble
+    this.bubbleGraphics = this.createRoundedRectangle(
+      centerX - 260, 
+      centerY + 130, 
+      180, 
+      100, 
+      0xffffff, 
+      0xbdc3c7,
+      15
+    ).setAlpha(0);
+    
+    this.bubbleText = this.add.text(centerX - 170, centerY + 180, '', {
           font: '20px Arial',
           fill: '#34495e',
           align: 'center',
           wordWrap: { width: 160 }
       }).setOrigin(0.5).setAlpha(0);
       
-      // Add simple animation to sidekick
+    // Add animation
       this.tweens.add({
           targets: this.sidekick,
-          y: '-=20',
+      y: '+=15',
           duration: 1500,
           yoyo: true,
           repeat: -1,
@@ -450,11 +514,8 @@ export class PuzzleScene extends Phaser.Scene {
   }
 
   showHint() {
-      // Show hint based on puzzle data
-      if (this.puzzleData && this.puzzleData.hint) {
-          // If we have a hint from the puzzle data, show it
           if (this.hintText) {
-              // Animate the hint text to appear
+      // Show hint text with animation
               this.tweens.add({
                   targets: this.hintText,
                   alpha: 1,
@@ -470,28 +531,10 @@ export class PuzzleScene extends Phaser.Scene {
                       duration: 500
                   });
               });
-          }
       } else {
-          // If no hint from puzzle data, show generic hint based on puzzle type
-          let hintText = "";
-          
-          switch(this.puzzleId) {
-              case 1:
-                  hintText = "Multiply the numbers!";
-                  break;
-              case 2:
-                  hintText = "Remember to keep the denominators the same!";
-                  break;
-              case 3:
-                  hintText = "Look for a pattern in how the numbers change!";
-                  break;
-              default:
-                  hintText = "Think carefully about the math problem!";
-          }
-          
-          // Show hint in bubble
+      // Show hint in sidekick bubble
           this.bubbleGraphics.setAlpha(1);
-          this.bubbleText.setText(hintText).setAlpha(1);
+      this.bubbleText.setText("Add the fractions carefully!").setAlpha(1);
           
           // Hide after a few seconds
           this.time.delayedCall(4000, () => {
@@ -500,17 +543,8 @@ export class PuzzleScene extends Phaser.Scene {
           });
       }
       
-      // Add a visual effect to the hint button
-      const hintEffect = this.add.circle(800, 950, 30, 0xffffff, 0.5);
-      this.tweens.add({
-          targets: hintEffect,
-          scale: 2,
-          alpha: 0,
-          duration: 800,
-          onComplete: () => {
-              hintEffect.destroy();
-          }
-      });
+    // Visual feedback for hint button
+    this.cameras.main.flash(300, 255, 255, 255, 0.3);
   }
 
   checkAnswer(answer) {
@@ -522,33 +556,43 @@ export class PuzzleScene extends Phaser.Scene {
   }
 
   handleCorrectAnswer() {
-      // Create success popup with rounded corners using graphics
-      const successGraphics = this.add.graphics();
-      successGraphics.fillStyle(0x2ecc71, 1);
-      successGraphics.lineStyle(4, 0x27ae60);
-      successGraphics.fillRoundedRect(800 - 250, 600 - 150, 500, 300, 20);
-      successGraphics.strokeRoundedRect(800 - 250, 600 - 150, 500, 300, 20);
-      
-      // Show success message
-      const success = this.add.text(800, 520, 'Correct!', {
+    const { centerX, centerY, colors } = this.config;
+    
+    // Disable buttons to prevent multiple answers
+    this.answerButtons.forEach(button => button.removeInteractive());
+    this.hintButton.removeInteractive();
+    
+    // Create success popup
+    const successBox = this.createRoundedRectangle(
+      centerX - 250, 
+      centerY - 150, 
+      500, 
+      300, 
+      colors.success, 
+      colors.successDark,
+      20
+    );
+    
+    // Success message
+    const successText = this.add.text(centerX, centerY - 80, 'Correct!', {
           font: '64px Arial',
-          fill: '#ffffff',
+      fill: colors.lightText,
           fontWeight: 'bold'
       }).setOrigin(0.5);
       
-      // Show tool earned message
-      const toolEarned = this.add.text(800, 600, `You earned the ${this.toolName}!`, {
+    // Tool earned message
+    const toolEarnedText = this.add.text(centerX, centerY, `You earned the ${this.toolName}!`, {
           font: '32px Arial',
-          fill: '#ffffff',
+      fill: colors.lightText,
           fontWeight: 'bold'
       }).setOrigin(0.5);
       
-      // Add animated tool image
-      const earnedTool = this.add.image(800, 670, this.toolImage)
+    // Tool image
+    const earnedTool = this.add.image(centerX, centerY + 70, this.toolImage)
           .setScale(0.8)
           .setOrigin(0.5);
       
-      // Add animation to earned tool
+    // Celebrate animation
       this.tweens.add({
           targets: earnedTool,
           scale: 1.2,
@@ -557,27 +601,9 @@ export class PuzzleScene extends Phaser.Scene {
           ease: 'Back.easeOut'
       });
       
-      // Add stars animation
-      for (let i = 0; i < 20; i++) {
-          const star = this.add.star(
-              800 + Phaser.Math.Between(-200, 200),
-              600 + Phaser.Math.Between(-150, 150),
-              5, 10, 25, 0xf1c40f
-          );
-          
-          this.tweens.add({
-              targets: star,
-              angle: 360,
-              scale: { from: 0.2, to: 1 },
-              alpha: { from: 0, to: 1 },
-              duration: 1500,
-              ease: 'Cubic.easeOut',
-              delay: i * 50
-          });
-      }
-      
-      // Add particles burst
-      const particles = this.add.particles(800, 600, 'particle', {
+    // Add particle effect
+    if (this.scene.systems.game.device.features.webgl) {
+      const particles = this.add.particles(centerX, centerY, 'particle', {
           speed: { min: 100, max: 300 },
           scale: { start: 0.4, end: 0 },
           lifespan: 1500,
@@ -585,94 +611,146 @@ export class PuzzleScene extends Phaser.Scene {
           emitting: false
       });
       
-      // Emit a burst of particles
-      particles.createEmitter().explode(100, 800, 600);
+      particles.createEmitter().explode(100, centerX, centerY);
+    }
       
-      // Camera shake effect
+    // Camera effect
       this.cameras.main.shake(500, 0.01);
       
-      // Update game state - bonus points for solving puzzle
+    // Update game state
       window.gameState.score += 50;
       
-      // Wait a moment and close
+    // Close after delay
       this.time.delayedCall(2500, () => {
           this.closePuzzle(true);
       });
   }
 
   handleWrongAnswer() {
-      // Create error popup with rounded corners using graphics
-      const errorGraphics = this.add.graphics();
-      errorGraphics.fillStyle(0xe74c3c, 0.9);
-      errorGraphics.lineStyle(4, 0xc0392b);
-      errorGraphics.fillRoundedRect(800 - 200, 600 - 100, 400, 200, 20);
-      errorGraphics.strokeRoundedRect(800 - 200, 600 - 100, 400, 200, 20);
-      
-      // Show error message
-      const error = this.add.text(800, 580, 'Try Again!', {
+    const { centerX, centerY, colors } = this.config;
+    
+    // Create error popup
+    const errorBox = this.createRoundedRectangle(
+      centerX - 200, 
+      centerY - 100, 
+      400, 
+      200, 
+      colors.error, 
+      colors.errorDark,
+      20
+    );
+    
+    // Error message
+    const errorText = this.add.text(centerX, centerY - 20, 'Try Again!', {
           font: '48px Arial',
-          fill: '#ffffff',
+      fill: colors.lightText,
           fontWeight: 'bold'
       }).setOrigin(0.5);
       
-      // Add a hint text
-      const hint = this.add.text(800, 630, 'Check your calculations...', {
+    // Hint text
+    const hintText = this.add.text(centerX, centerY + 30, 'Check your calculations...', {
           font: '24px Arial',
-          fill: '#ffffff'
+      fill: colors.lightText
       }).setOrigin(0.5);
       
-      // Add shake animation
+    // Shake animation
       this.tweens.add({
-          targets: [errorGraphics, error, hint],
+      targets: [errorBox, errorText, hintText],
           x: '+=10',
           duration: 50,
           yoyo: true,
           repeat: 5
       });
       
-      // Add a red flash overlay
-      const flash = this.add.rectangle(800, 600, 1600, 1200, 0xff0000, 0.3);
-      flash.setAlpha(0);
-      
-      this.tweens.add({
-          targets: flash,
-          alpha: 0.3,
-          duration: 100,
-          yoyo: true,
-          onComplete: () => {
-              flash.destroy();
-          }
-      });
-      
-      // Remove after a short delay
+    // Red flash
+    this.cameras.main.flash(300, 255, 0, 0, 0.3);
+    
+    // Remove after delay
       this.time.delayedCall(2000, () => {
-          errorGraphics.destroy();
-          error.destroy();
-          hint.destroy();
-      });
+      errorBox.destroy();
+      errorText.destroy();
+      hintText.destroy();
+    });
   }
 
   closePuzzle(success) {
       // Fade out animation
       this.tweens.add({
-          targets: [this.overlay, this.dialogBoxGraphics, this.headerGraphics, this.toolCircle, this.toolImage],
+      targets: [
+        this.overlay, 
+        this.dialogBox, 
+        this.headerBox, 
+        this.toolCircle, 
+        this.titleText,
+        this.toolImage
+      ],
           alpha: 0,
           duration: 500,
           onComplete: () => {
-              // Close the puzzle scene
-              this.scene.stop();
-              
-              // Emit event to parent scene with result
-              const parentScene = this.scene.get(this.parentScene);
-              if (parentScene) {
-                  parentScene.events.emit('puzzleComplete', success);
-              }
-          }
-      });
+              if (success) {
+          this.handleReward();
+        }
+        
+        // Close scene
+        this.scene.stop();
+        this.scene.resume(this.parentScene);
+        
+        // Emit event
+        const parentScene = this.scene.get(this.parentScene);
+        if (parentScene) {
+          parentScene.events.emit('puzzleComplete', success);
+        }
+      }
+    });
+  }
+
+  handleReward() {
+    // Handle special case for smoke bomb
+                  if (this.toolName === 'Smoke Bomb') {
+                      const player = this.scene.get(this.parentScene).player;
+                      
+                      if (player.pendingCollectible) {
+                          player.pendingCollectible.collect();
+                          player.pendingCollectible = null;
+                          
+                          player.smokeBombs += 1;
+                          
+                          this.scene.get(this.parentScene).uiManager.updateSmokeBombCount(player.smokeBombs);
+                          this.scene.get(this.parentScene).uiManager.showMessage("Great job! Smoke bomb collected!");
+                      }
+                  } else {
+      // Handle standard tools
+                      const parentScene = this.scene.get(this.parentScene);
+                      
+      // Initialize collectedTools array if not exists
+                      if (!window.gameState.collectedTools) {
+                          window.gameState.collectedTools = [];
+                      }
+                      
+                      // Add tool if not already collected
+                      if (!window.gameState.collectedTools.includes(this.toolImage)) {
+                          window.gameState.collectedTools.push(this.toolImage);
+                      }
+                      
+      // Update UI
+                      if (parentScene.uiManager && parentScene.uiManager.updateToolsUI) {
+                          parentScene.uiManager.updateToolsUI();
+                      }
+                      
+      // Show message
+                      if (parentScene.uiManager) {
+                          parentScene.uiManager.showMessage(`Great job! ${this.toolName} collected!`);
+                      }
+                      
+      // Add bonus points
+                      window.gameState.score += 50;
+                      if (parentScene.uiManager) {
+                          parentScene.uiManager.updateScore();
+                      }
+                  }
   }
 
   calculateGCD(a, b) {
-      // Calculate greatest common divisor using Euclidean algorithm
       return b === 0 ? a : this.calculateGCD(b, a % b);
   }
 }

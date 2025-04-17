@@ -13,7 +13,7 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
       // Set scale
       this.setScale(0.4);
       
-      // Collectible type (coin or tool)
+      // Collectible type (coin, tool, or smoke-bomb)
       this.type = type;
       
       // Configure based on type
@@ -37,6 +37,10 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
           this.setTexture('collectible');
           this.setTint(0xffd700);
           this.value = 10;
+      } else if (this.type === 'smoke-bomb') {
+          // Smoke bombs are medium sized and use their own texture
+          this.setScale(0.4);
+          this.setTexture('smoke-bomb');
       } else {
           // Tools are larger and use their own textures
           this.setScale(0.5);
@@ -96,6 +100,12 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
       if (this.type === 'coin') {
           window.gameState.score += this.value;
       } 
+      // If this is a smoke bomb, add to player's smoke bombs
+      else if (this.type === 'smoke-bomb') {
+          // Smoke bombs are handled in the player class
+          window.gameState.collectedSmokeBombs = window.gameState.collectedSmokeBombs || [];
+          window.gameState.collectedSmokeBombs.push(this.type);
+      }
       // If this is a tool, add to collected tools
       else {
           window.gameState.collectedTools = window.gameState.collectedTools || [];
@@ -123,6 +133,8 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
       // Return a description based on type
       if (this.type === 'coin') {
           return "A shiny coin worth " + this.value + " points";
+      } else if (this.type === 'smoke-bomb') {
+          return "A smoke bomb to temporarily blind and confuse enemies";
       } else {
           const descriptions = {
               'wrench': "A sturdy wrench for loosening bolts",
