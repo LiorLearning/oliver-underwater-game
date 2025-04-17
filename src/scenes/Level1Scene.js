@@ -328,7 +328,7 @@ export class Level1Scene extends Phaser.Scene {
   // Spawn smoke bomb collectibles in the maze
   createSmokeBombs() {
       this.smokeBombsGroup = this.physics.add.group();
-      const smokeBombCount = 12;
+      const smokeBombCount = 24;
       const positions = this.mazeGenerator.getSafePositions(smokeBombCount);
       positions.forEach(pos => {
           const smokeBomb = new Collectible(this, pos.x, pos.y, 'smoke-bomb', 'smoke-bomb');
