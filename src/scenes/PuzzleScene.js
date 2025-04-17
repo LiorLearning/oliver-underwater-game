@@ -35,10 +35,28 @@ export class PuzzleScene extends Phaser.Scene {
   }
 
   init(data) {
+    console.log("Initializing PuzzleScene with data:", data);
     this.parentScene = data.parentScene;
     this.toolName = data.toolName || 'Tool';
     this.toolImage = data.toolImage || 'wrench';
     this.isSmokeBomb = this.toolImage === 'smoke-bomb';
+    
+    // Reset internal state for fresh instance
+    this.currentProblemIndex = 0;
+    this.problems = [];
+    this.correctAnswer = null;
+    this.ui = this.ui || {};
+    
+    // Safety check for required resources
+    try {
+      if (!this.textures.exists(this.toolImage)) {
+        console.warn(`Warning: Image '${this.toolImage}' does not exist in texture cache. Using fallback.`);
+        this.toolImage = 'wrench'; // Fallback to a standard tool
+      }
+    } catch (error) {
+      console.error("Error checking texture:", error);
+      this.toolImage = 'wrench'; // Fallback on error
+    }
   }
 
   create() {
@@ -73,36 +91,64 @@ export class PuzzleScene extends Phaser.Scene {
   }
 
   generateProblems() {
+    console.log("Generating problems...");
     // Generate two different problems
     this.problems = [];
     
-    // First problem: multiplication
-    const num1 = Phaser.Math.Between(1, 10);
-    const num2 = Phaser.Math.Between(1, 10);
-    const product = num1 * num2;
-    
-    this.problems.push({
-      type: 'multiplication',
-      questionStr: `${num1} × ${num2} = ?`,
-      correctAnswer: product.toString(),
-      wrongOptions: this.generateWrongOptions(product, num1, num2)
-    });
-    
-    // Second problem: addition
-    const num3 = Phaser.Math.Between(10, 30);
-    const num4 = Phaser.Math.Between(10, 30);
-    const sum = num3 + num4;
-    
-    this.problems.push({
-      type: 'addition',
-      questionStr: `${num3} + ${num4} = ?`,
-      correctAnswer: sum.toString(),
-      wrongOptions: [
-        (sum + Phaser.Math.Between(1, 5)).toString(),
-        (sum - Phaser.Math.Between(1, 5)).toString(),
-        (sum + 10).toString()
-      ]
-    });
+    try {
+      // First problem: multiplication
+      const num1 = Phaser.Math.Between(1, 10);
+      const num2 = Phaser.Math.Between(1, 10);
+      const product = num1 * num2;
+      
+      console.log(`Created multiplication problem: ${num1} × ${num2} = ${product}`);
+      
+      this.problems.push({
+        type: 'multiplication',
+        questionStr: `${num1} × ${num2} = ?`,
+        correctAnswer: product.toString(),
+        wrongOptions: this.generateWrongOptions(product, num1, num2)
+      });
+      
+      // Second problem: addition
+      const num3 = Phaser.Math.Between(10, 30);
+      const num4 = Phaser.Math.Between(10, 30);
+      const sum = num3 + num4;
+      
+      console.log(`Created addition problem: ${num3} + ${num4} = ${sum}`);
+      
+      this.problems.push({
+        type: 'addition',
+        questionStr: `${num3} + ${num4} = ?`,
+        correctAnswer: sum.toString(),
+        wrongOptions: [
+          (sum + Phaser.Math.Between(1, 5)).toString(),
+          (sum - Phaser.Math.Between(1, 5)).toString(),
+          (sum + 10).toString()
+        ]
+      });
+      
+      console.log(`Generated ${this.problems.length} problems successfully`);
+    } catch (error) {
+      console.error("Error in generateProblems:", error);
+      
+      // Fallback to hardcoded problems
+      this.problems = [
+        {
+          type: 'multiplication',
+          questionStr: "5 × 5 = ?",
+          correctAnswer: "25",
+          wrongOptions: ["20", "30", "10"]
+        },
+        {
+          type: 'addition',
+          questionStr: "15 + 10 = ?",
+          correctAnswer: "25",
+          wrongOptions: ["20", "30", "35"]
+        }
+      ];
+      console.log("Used fallback problems");
+    }
   }
 
   displayCurrentProblem() {
@@ -118,7 +164,22 @@ export class PuzzleScene extends Phaser.Scene {
     }
     
     // Get current problem
-    const problem = this.problems[this.currentProblemIndex];
+    let problem = this.problems[this.currentProblemIndex];
+    
+    // Check if problem exists before proceeding
+    if (!problem) {
+      console.error(`Problem not found at index ${this.currentProblemIndex}`);
+      // Regenerate problems if needed
+      this.generateProblems();
+      // Try again with the first problem
+      this.currentProblemIndex = 0;
+      problem = this.problems[0];
+      if (!problem) {
+        console.error("Could not generate problems");
+        return; // Exit function if still no problems
+      }
+    }
+    
     this.correctAnswer = problem.correctAnswer;
     
     // Display problem counter
