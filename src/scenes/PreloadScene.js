@@ -29,6 +29,7 @@ export class PreloadScene extends Phaser.Scene {
       
       // Go to menu scene
       this.scene.start('MenuScene');
+      // this.scene.start('ToolSelectScene');
   }
 
   createLoadingBar() {
@@ -96,6 +97,9 @@ export class PreloadScene extends Phaser.Scene {
       
       // Weapons
       this.load.image('smoke-bomb', 'assets/images/smoke-bomb.png');
+      this.load.image('laser', 'assets/images/laser.png');
+      this.load.image('gun', 'assets/images/gun.png');
+      this.load.image('rocket-launcher', 'assets/images/rocket-launcher.png');
   }
 
   loadSpritesheets() {

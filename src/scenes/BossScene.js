@@ -135,39 +135,41 @@ export class BossScene extends Phaser.Scene {
   }
   
   createToolSprites() {
-      // Check for collected tools
-      if (!window.gameState.collectedTools || window.gameState.collectedTools.length === 0) {
-          // If no tools, set default
-          window.gameState.collectedTools = ['wrench'];
+      // Check for selected weapon
+      if (!window.gameState.selectedTool) {
+          // If no weapon was selected, set a default
+          window.gameState.selectedTool = {
+              name: 'Laser Beam',
+              image: 'laser',
+              strength: 10
+          };
       }
       
-      // Create a list to track tool sprites
+      // Create a list to track weapon sprites
       this.toolSprites = [];
       
-      // Create each tool as a sprite that orbits the player
-      window.gameState.collectedTools.forEach((toolType, index) => {
-          const angle = (index / window.gameState.collectedTools.length) * Math.PI * 2;
-          const distanceFromPlayer = 60;
-          
-          // Calculate position around player
-          const x = this.player.x + Math.cos(angle) * distanceFromPlayer;
-          const y = this.player.y + Math.sin(angle) * distanceFromPlayer;
-          
-          // Create the tool sprite
-          const toolSprite = this.add.image(x, y, toolType)
-              .setScale(0.3)
-              .setDepth(11);
-          
-          // Store reference to the tool
-          this.toolSprites.push({
-              sprite: toolSprite,
-              angle: angle,
-              distance: distanceFromPlayer,
-              type: toolType
-          });
+      // Create the selected weapon as a sprite that orbits the player
+      const angle = 0;
+      const distanceFromPlayer = 60;
+      
+      // Calculate position around player
+      const x = this.player.x + Math.cos(angle) * distanceFromPlayer;
+      const y = this.player.y + Math.sin(angle) * distanceFromPlayer;
+      
+      // Create the weapon sprite
+      const weaponSprite = this.add.image(x, y, window.gameState.selectedTool.image)
+          .setScale(0.3)
+          .setDepth(11);
+      
+      // Store reference to the weapon
+      this.toolSprites.push({
+          sprite: weaponSprite,
+          angle: angle,
+          distance: distanceFromPlayer,
+          type: window.gameState.selectedTool.image
       });
       
-      // Update tool positions in game loop
+      // Update weapon position in game loop
       this.events.on('update', () => {
           if (this.player && this.player.active) {
               this.updateToolPositions();
@@ -222,7 +224,7 @@ export class BossScene extends Phaser.Scene {
       this.instructionText = this.add.text(
           this.cameras.main.width / 2, 
           this.cameras.main.height - 100, 
-          'Press SPACE to attack with your tools!', 
+          'Press SPACE to attack with your weapon!', 
           {
               font: '28px Arial',
               fill: '#ffffff',
@@ -254,29 +256,39 @@ export class BossScene extends Phaser.Scene {
           this.useSpecialAttack();
       });
       
-      // Add tool info
+      // Add weapon info
       this.add.text(
           50, 
           this.cameras.main.height - 80, 
-          'Collected Tools:', 
+          'Selected Weapon:', 
           {
               font: '20px Arial',
               fill: '#ffffff'
           }
       );
       
-      // Show each collected tool
-      window.gameState.collectedTools.forEach((tool, index) => {
+      // Show selected weapon name and damage
+      if (window.gameState.selectedTool) {
           this.add.text(
               60, 
-              this.cameras.main.height - 50 + (index * 25), 
-              tool, 
+              this.cameras.main.height - 50, 
+              window.gameState.selectedTool.name, 
               {
                   font: '18px Arial',
                   fill: '#ffff00'
               }
           );
-      });
+          
+          this.add.text(
+              60, 
+              this.cameras.main.height - 25, 
+              `Damage: ${window.gameState.selectedTool.strength}`, 
+              {
+                  font: '18px Arial',
+                  fill: '#00ff00'
+              }
+          );
+      }
   }
 
   startIntroSequence() {
@@ -362,23 +374,8 @@ export class BossScene extends Phaser.Scene {
           return;
       }
       
-      // Calculate damage based on tools
-      let damage = 5; // Base damage
-      
-      // Add damage for each tool
-      window.gameState.collectedTools.forEach(tool => {
-          switch(tool) {
-              case 'wrench':
-                  damage += 5;
-                  break;
-              case 'hammer':
-                  damage += 8;
-                  break;
-              case 'screwdriver':
-                  damage += 7;
-                  break;
-          }
-      });
+      // Calculate damage based on selected weapon
+      let damage = window.gameState.selectedTool ? window.gameState.selectedTool.strength : 5;
       
       // Apply damage to boss
       this.boss.takeDamage(damage);
@@ -386,7 +383,7 @@ export class BossScene extends Phaser.Scene {
       // Show damage number
       this.showDamageNumber(this.boss.x, this.boss.y, damage);
       
-      // Flash tools used for attack
+      // Flash weapon used for attack
       this.toolSprites.forEach(tool => {
           this.tweens.add({
               targets: tool.sprite,
