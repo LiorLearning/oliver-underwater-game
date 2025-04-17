@@ -51,6 +51,8 @@ export class Level1Scene extends Phaser.Scene {
       // Create collectibles
       this.createCoins();
       this.toolManager.createTools();
+      // Create smoke bomb collectibles
+      this.createSmokeBombs();
       
       // Create player and enemies
       this.createPlayer();
@@ -71,6 +73,15 @@ export class Level1Scene extends Phaser.Scene {
       
       // Show instructions
       this.uiManager.showInstructions();
+      
+      // Listen for puzzle completion event
+      this.events.on('puzzleComplete', (success) => {
+          if (success && this.currentTool) {
+              this.currentTool.collect();
+              this.uiManager.updateToolsUI();
+              this.uiManager.showMessage(`Puzzle solved! Collected ${this.currentTool.toolName || this.currentTool.type}!`);
+          }
+      });
   }
 
   update() {
@@ -246,5 +257,24 @@ export class Level1Scene extends Phaser.Scene {
       this.time.delayedCall(2000, () => {
           this.scene.start('ToolSelectScene');
       });
+  }
+
+  // Spawn smoke bomb collectibles in the maze
+  createSmokeBombs() {
+      this.smokeBombsGroup = this.physics.add.group();
+      const smokeBombCount = 3;
+      const positions = this.mazeGenerator.getSafePositions(smokeBombCount);
+      positions.forEach(pos => {
+          const smokeBomb = new Collectible(this, pos.x, pos.y, 'collectible', 'smoke-bomb');
+          this.smokeBombsGroup.add(smokeBomb);
+      });
+  }
+
+  // Handler for collecting smoke bombs
+  collectSmokeBomb(player, smokeBomb) {
+      smokeBomb.collect();
+      player.smokeBombs += 1;
+      this.uiManager.updateSmokeBombUI(player.smokeBombs);
+      this.uiManager.showMessage('Collected smoke bomb!');
   }
 }

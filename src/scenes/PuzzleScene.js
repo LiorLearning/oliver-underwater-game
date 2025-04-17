@@ -36,7 +36,7 @@ export class PuzzleScene extends Phaser.Scene {
 
   create() {
     this.createBackground();
-    this.createFractionPuzzle();
+    this.createMultiplicationPuzzle();
       this.createButtons();
       this.createSidekick();
   }
@@ -45,7 +45,7 @@ export class PuzzleScene extends Phaser.Scene {
     const { width, height, centerX, centerY, colors } = this.config;
     
     // Semi-transparent overlay
-    this.overlay = this.add.rectangle(centerX, centerY, 1600, 1200, 0x000000, 0.7);
+    this.overlay = this.add.rectangle(centerX, centerY, 1600, 1200, 0x000000, 0.5);
     
     // Dialog box
     this.dialogBox = this.createRoundedRectangle(
@@ -117,227 +117,47 @@ export class PuzzleScene extends Phaser.Scene {
     return graphics;
   }
 
-  createFractionPuzzle() {
+  createMultiplicationPuzzle() {
     const { centerX, centerY, colors } = this.config;
     
-    // Generate fraction problem based on difficulty
-    const problem = this.generateFractionProblem(this.difficulty);
-    
-    // Question background
+    // Question background with secondary color
     this.questionBox = this.createRoundedRectangle(
-      centerX - 350, 
-      centerY - 60, 
-      700, 
-      120, 
-      colors.background, 
-      0xbdc3c7,
+      centerX - 300,
+      centerY - 60,
+      600,
+      120,
+      colors.secondary,
+      colors.secondaryDark,
       15
     );
-      
-      // Display problem
-    this.questionText = this.add.text(
-      centerX, 
-      centerY, 
-      problem.question, 
-      {
-        font: '50px Arial',
-        fill: colors.text,
-          fontStyle: 'bold'
-      }
-    ).setOrigin(0.5);
     
-    // Set correct answer
-    this.correctAnswer = problem.answer;
+    // Generate multiplication problem
+    const num1 = Phaser.Math.Between(1, 10 * this.difficulty);
+    const num2 = Phaser.Math.Between(1, 10 * this.difficulty);
+    const product = num1 * num2;
+    this.correctAnswer = product.toString();
+    const questionStr = `${num1} × ${num2} = ?`;
+    this.questionText = this.add.text(
+      centerX,
+      centerY,
+      questionStr,
+      { font: '60px Arial', fill: colors.lightText, fontStyle: 'bold' }
+    )
+      .setOrigin(0.5)
+      .setShadow(2, 2, '#000', 2);
+    
+    // Generate plausible wrong options
+    const wrongOptions = [
+      (product + Phaser.Math.Between(1, 5)).toString(),
+      (product - Phaser.Math.Between(1, 5) > 0
+        ? product - Phaser.Math.Between(1, 5)
+        : product + Phaser.Math.Between(6, 10)
+      ).toString(),
+      ((num1 + Phaser.Math.Between(1, 3)) * num2).toString()
+    ];
     
     // Create answer options
-    this.createAnswerOptions(problem.options);
-    
-    // Add hint if available
-    if (problem.hint) {
-      this.hintText = this.add.text(
-        centerX, 
-        centerY + 70, 
-        "Hint: " + problem.hint, 
-        {
-          font: '24px Arial',
-          fill: '#7f8c8d'
-        }
-      ).setOrigin(0.5).setAlpha(0);
-    }
-  }
-
-  generateFractionProblem(difficulty) {
-    // Adjust denominator range based on difficulty
-    let denominatorRange = { min: 2, max: 5 };
-    if (difficulty === 2) denominatorRange = { min: 2, max: 8 };
-    if (difficulty >= 3) denominatorRange = { min: 2, max: 12 };
-    
-    // Generate different types of fraction problems
-    const problemType = Phaser.Math.Between(1, 3);
-    
-    switch(problemType) {
-      case 1:
-        // Same denominator addition
-        return this.generateSameDenominatorProblem(denominatorRange);
-      case 2:
-        // Different denominator addition (simple)
-        return this.generateDifferentDenominatorProblem(denominatorRange);
-      case 3:
-        // Mixed number addition
-        return this.generateMixedNumberProblem(denominatorRange);
-      default:
-        return this.generateSameDenominatorProblem(denominatorRange);
-    }
-  }
-
-  generateSameDenominatorProblem(range) {
-    const denominator = Phaser.Math.Between(range.min, range.max);
-      const numerator1 = Phaser.Math.Between(1, denominator - 1);
-      const numerator2 = Phaser.Math.Between(1, denominator - 1);
-      
-      // Calculate answer (simplified form)
-      let sumNumerator = numerator1 + numerator2;
-      let sumDenominator = denominator;
-      
-      // Simplify fraction
-      const gcd = this.calculateGCD(sumNumerator, sumDenominator);
-    const simplifiedNumerator = sumNumerator / gcd;
-    const simplifiedDenominator = sumDenominator / gcd;
-      
-    let answer = `${simplifiedNumerator}/${simplifiedDenominator}`;
-      
-      // Handle improper fractions
-    if (simplifiedNumerator >= simplifiedDenominator) {
-      const wholeNumber = Math.floor(simplifiedNumerator / simplifiedDenominator);
-      const remainder = simplifiedNumerator % simplifiedDenominator;
-          
-          if (remainder === 0) {
-        answer = `${wholeNumber}`;
-          } else {
-        answer = `${wholeNumber} ${remainder}/${simplifiedDenominator}`;
-      }
-    }
-      
-      // Generate wrong answers that look plausible
-      const wrongAnswers = [
-          `${numerator1 + numerator2}/${denominator * 2}`,
-          `${numerator1 * numerator2}/${denominator}`,
-          `${numerator1 + numerator2 + 1}/${denominator}`
-      ];
-      
-    return {
-      question: `${numerator1}/${denominator} + ${numerator2}/${denominator} = ?`,
-      answer: answer,
-      options: [answer, ...wrongAnswers],
-      hint: "Add the numerators, keep the same denominator, and simplify if needed."
-    };
-  }
-
-  generateDifferentDenominatorProblem(range) {
-    // Create fractions with different but related denominators
-    const denominator1 = Phaser.Math.Between(range.min, range.max);
-    const denominator2 = Phaser.Math.Between(range.min, range.max);
-    
-    // Ensure denominators are different
-    if (denominator1 === denominator2) {
-      return this.generateSameDenominatorProblem(range);
-    }
-    
-    const numerator1 = Phaser.Math.Between(1, denominator1 - 1);
-    const numerator2 = Phaser.Math.Between(1, denominator2 - 1);
-    
-    // Calculate the least common multiple
-    const lcm = (denominator1 * denominator2) / this.calculateGCD(denominator1, denominator2);
-    
-    // Convert fractions to common denominator
-    const newNumerator1 = numerator1 * (lcm / denominator1);
-    const newNumerator2 = numerator2 * (lcm / denominator2);
-    
-    // Calculate sum
-    let sumNumerator = newNumerator1 + newNumerator2;
-    let sumDenominator = lcm;
-    
-    // Simplify
-    const gcd = this.calculateGCD(sumNumerator, sumDenominator);
-    const simplifiedNumerator = sumNumerator / gcd;
-    const simplifiedDenominator = sumDenominator / gcd;
-    
-    let answer = `${simplifiedNumerator}/${simplifiedDenominator}`;
-    
-    // Handle improper fractions
-    if (simplifiedNumerator >= simplifiedDenominator) {
-      const wholeNumber = Math.floor(simplifiedNumerator / simplifiedDenominator);
-      const remainder = simplifiedNumerator % simplifiedDenominator;
-      
-      if (remainder === 0) {
-        answer = `${wholeNumber}`;
-      } else {
-        answer = `${wholeNumber} ${remainder}/${simplifiedDenominator}`;
-      }
-    }
-    
-    // Generate plausible wrong answers
-    const wrongAnswers = [
-      `${numerator1 + numerator2}/${denominator1 + denominator2}`,
-      `${numerator1 * numerator2}/${denominator1 * denominator2}`,
-      `${numerator1}/${denominator1} - ${numerator2}/${denominator2}`
-    ];
-    
-    return {
-      question: `${numerator1}/${denominator1} + ${numerator2}/${denominator2} = ?`,
-      answer: answer,
-      options: [answer, ...wrongAnswers],
-      hint: "Find a common denominator first!"
-    };
-  }
-
-  generateMixedNumberProblem(range) {
-    const denominator = Phaser.Math.Between(range.min, range.max);
-    
-    // Generate mixed numbers
-    const wholeNumber1 = Phaser.Math.Between(1, 3);
-    const numerator1 = Phaser.Math.Between(1, denominator - 1);
-    
-    const wholeNumber2 = Phaser.Math.Between(1, 2);
-    const numerator2 = Phaser.Math.Between(1, denominator - 1);
-    
-    // Calculate improper fractions
-    const improperNumerator1 = (wholeNumber1 * denominator) + numerator1;
-    const improperNumerator2 = (wholeNumber2 * denominator) + numerator2;
-    
-    // Add fractions
-    let sumNumerator = improperNumerator1 + improperNumerator2;
-    let sumDenominator = denominator;
-    
-    // Simplify
-    const gcd = this.calculateGCD(sumNumerator, sumDenominator);
-    const simplifiedNumerator = sumNumerator / gcd;
-    const simplifiedDenominator = sumDenominator / gcd;
-    
-    // Convert to mixed number
-    const wholeNumber = Math.floor(simplifiedNumerator / simplifiedDenominator);
-    const remainder = simplifiedNumerator % simplifiedDenominator;
-    
-    let answer;
-    if (remainder === 0) {
-      answer = `${wholeNumber}`;
-    } else {
-      answer = `${wholeNumber} ${remainder}/${simplifiedDenominator}`;
-    }
-    
-    // Generate plausible wrong answers
-      const wrongAnswers = [
-      `${wholeNumber1 + wholeNumber2} ${numerator1 + numerator2}/${denominator}`,
-      `${wholeNumber1 + wholeNumber2} ${Math.abs(numerator1 - numerator2)}/${denominator}`,
-      `${wholeNumber1 + wholeNumber2 + 1}`
-    ];
-    
-    return {
-      question: `${wholeNumber1} ${numerator1}/${denominator} + ${wholeNumber2} ${numerator2}/${denominator} = ?`,
-      answer: answer,
-      options: [answer, ...wrongAnswers],
-      hint: "Convert to improper fractions first, then add!"
-    };
+    this.createAnswerOptions([this.correctAnswer, ...wrongOptions]);
   }
 
   createAnswerOptions(answers) {
@@ -715,7 +535,7 @@ export class PuzzleScene extends Phaser.Scene {
                           
                           player.smokeBombs += 1;
                           
-                          this.scene.get(this.parentScene).uiManager.updateSmokeBombCount(player.smokeBombs);
+                          this.scene.get(this.parentScene).uiManager.updateSmokeBombUI(player.smokeBombs);
                           this.scene.get(this.parentScene).uiManager.showMessage("Great job! Smoke bomb collected!");
                       }
                   } else {

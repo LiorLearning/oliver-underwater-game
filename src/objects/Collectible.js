@@ -134,7 +134,7 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
       if (this.type === 'coin') {
           return "A shiny coin worth " + this.value + " points";
       } else if (this.type === 'smoke-bomb') {
-          return "A smoke bomb to temporarily blind and confuse enemies";
+          return "Smoke Bomb - Press SPACE to use against enemies";
       } else {
           const descriptions = {
               'wrench': "A sturdy wrench for loosening bolts",

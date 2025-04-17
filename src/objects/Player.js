@@ -43,7 +43,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.invulnerableTime = 1000; // ms
         
         // Smoke bomb properties
-        this.smokeBombs = 3;
+        this.smokeBombs = 0;
         this.canDeployBomb = true;
         this.bombCooldown = 1000; // ms
         
@@ -98,6 +98,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             const nearestTool = this.findNearestCollectible(this.scene.tools.getChildren());
             if (nearestTool) {
                 this.collectibleInRange = nearestTool;
+            }
+        }
+        
+        // If no coin or tool is in range, check for smoke bombs
+        if (!this.collectibleInRange && this.scene.smokeBombsGroup) {
+            const nearestSmokeBomb = this.findNearestCollectible(this.scene.smokeBombsGroup.getChildren());
+            if (nearestSmokeBomb) {
+                this.collectibleInRange = nearestSmokeBomb;
             }
         }
         
@@ -160,9 +168,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
     
     collectItem(collectible) {
-        // Determine type of collectible (coin or tool)
+        // Determine type of collectible
         if (collectible.type === 'coin') {
             this.scene.collectCoin(this, collectible);
+        } else if (collectible.type === 'smoke-bomb') {
+            this.handleCollectible(collectible);
         } else {
             this.scene.collectTool(this, collectible);
         }

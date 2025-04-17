@@ -114,7 +114,7 @@ export class UIManager {
         this.smokeBombsText = this.scene.add.text(
             smokeBombX, 
             this.gameHeight - bottomMargin + 50, 
-            'Smoke Bombs: 3', 
+            `Smoke Bombs: ${this.scene.player.smokeBombs}`, 
             {
                 font: '24px Arial',
                 fill: '#ffffff'
@@ -263,11 +263,5 @@ export class UIManager {
             instructionText.destroy();
             continueButton.destroy();
         });
-    }
-
-    updateSmokeBombCount(count) {
-        if (this.smokeBombsText) {
-            this.smokeBombsText.setText(`Smoke Bombs: ${count}`);
-        }
     }
 } 

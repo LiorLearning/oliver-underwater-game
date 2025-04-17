@@ -81,6 +81,14 @@ export class CollisionManager {
             null,
             this.scene
         );
+        // Player collects smoke bombs
+        this.scene.physics.add.overlap(
+            this.scene.player,
+            this.scene.smokeBombsGroup,
+            this.scene.collectSmokeBomb,
+            null,
+            this.scene
+        );
     }
 
     _setupExitCollision() {
