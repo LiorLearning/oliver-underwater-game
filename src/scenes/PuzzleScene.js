@@ -2,11 +2,14 @@ export class PuzzleScene extends Phaser.Scene {
   constructor() {
     super('PuzzleScene');
     
+    // Get dimensions from config
+    // const { width, height } = config;
+    
     this.config = {
       width: 800,
       height: 600,
-      centerX: 400,
-      centerY: 300,
+      centerX: 800,
+      centerY: 450,
       colors: {
         primary: 0x3498db,
         secondary: 0x27ae60,
