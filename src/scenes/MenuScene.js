@@ -14,12 +14,6 @@ export class MenuScene extends Phaser.Scene {
       
       // Add start button
       this.createStartButton();
-      
-      // Add background music
-    //   this.sound.play('theme', {
-    //       loop: true,
-    //       volume: 0.5
-    //   });
   }
   
   createTitle() {

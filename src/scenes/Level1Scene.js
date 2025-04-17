@@ -85,6 +85,12 @@ export class Level1Scene extends Phaser.Scene {
       
       // Show instructions
       this.uiManager.showInstructions();
+
+      // Add background music
+      // this.sound.play('theme', {
+      //   loop: true,
+      //   volume: 0.2
+      // });
       
       // Listen for puzzle completion event
       this.events.on('puzzleComplete', (success) => {

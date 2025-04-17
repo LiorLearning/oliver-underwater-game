@@ -111,13 +111,15 @@ export class PreloadScene extends Phaser.Scene {
       // Currently commented to avoid errors if files don't exist
       
       // // Sound effects
-      // this.load.audio('collect', 'assets/audio/collect.mp3');
+      this.load.audio('click', 'assets/audio/sfx/click.mp3');
+      this.load.audio('correct', 'assets/audio/sfx/correct.mp3');
+      this.load.audio('incorrect', 'assets/audio/sfx/incorrect.mp3');
       // this.load.audio('hit', 'assets/audio/hit.mp3');
       // this.load.audio('win', 'assets/audio/win.mp3');
       // this.load.audio('lose', 'assets/audio/lose.mp3');
       
       // // Music
-      // this.load.audio('theme', 'assets/audio/theme.mp3');
+      this.load.audio('theme', 'assets/audio/music/theme.mp3');
       // this.load.audio('boss_theme', 'assets/audio/boss_theme.mp3');
   }
 
