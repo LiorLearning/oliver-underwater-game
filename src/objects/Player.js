@@ -246,28 +246,50 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.smokeBombs--;
         this.canDeployBomb = false;
         
-        // Determine direction to throw the bomb (based on facing direction or movement)
+        // Find the nearest assistant, if available
+        const nearestAssistantInfo = this.findNearestAssistant();
+        
+        // Determine direction to throw the bomb (based on nearest assistant or movement)
         let throwDirectionX = 0;
         let throwDirectionY = 0;
+        let bombX, bombY;
         
-        // First check if player is moving and use that direction
-        if (this.body.velocity.x !== 0 || this.body.velocity.y !== 0) {
-            // Normalize the velocity vector
-            const velMagnitude = Math.sqrt(this.body.velocity.x * this.body.velocity.x + this.body.velocity.y * this.body.velocity.y);
-            throwDirectionX = this.body.velocity.x / velMagnitude;
-            throwDirectionY = this.body.velocity.y / velMagnitude;
+        if (nearestAssistantInfo && nearestAssistantInfo.assistant && nearestAssistantInfo.distance < 400) {
+            // Target the nearest assistant
+            const assistant = nearestAssistantInfo.assistant;
+            // Direction to assistant
+            const dirX = assistant.x - this.x;
+            const dirY = assistant.y - this.y;
+            const dirMagnitude = Math.sqrt(dirX * dirX + dirY * dirY);
+            throwDirectionX = dirX / dirMagnitude;
+            throwDirectionY = dirY / dirMagnitude;
+            
+            // Calculate the bomb position (halfway to assistant)
+            const throwDistance = Math.min(150, nearestAssistantInfo.distance * 0.7);
+            bombX = this.x + throwDirectionX * throwDistance;
+            bombY = this.y + throwDirectionY * throwDistance;
+            
+            this.scene.uiManager.showMessage("Targeting nearest assistant!");
         } else {
-            // If not moving, use the facing direction
-            throwDirectionX = this.flipX ? -1 : 1;
-            throwDirectionY = 0;
+            // First check if player is moving and use that direction
+            if (this.body.velocity.x !== 0 || this.body.velocity.y !== 0) {
+                // Normalize the velocity vector
+                const velMagnitude = Math.sqrt(this.body.velocity.x * this.body.velocity.x + this.body.velocity.y * this.body.velocity.y);
+                throwDirectionX = this.body.velocity.x / velMagnitude;
+                throwDirectionY = this.body.velocity.y / velMagnitude;
+            } else {
+                // If not moving, use the facing direction
+                throwDirectionX = this.flipX ? -1 : 1;
+                throwDirectionY = 0;
+            }
+            
+            // Distance to throw the bomb (1 cell ahead)
+            const throwDistance = 150;
+            
+            // Calculate the bomb position (1 cell ahead of player)
+            bombX = this.x + throwDirectionX * throwDistance;
+            bombY = this.y + throwDirectionY * throwDistance;
         }
-        
-        // Distance to throw the bomb (1 cell ahead)
-        const throwDistance = 150;
-        
-        // Calculate the bomb position (1 cell ahead of player)
-        const bombX = this.x + throwDirectionX * throwDistance;
-        const bombY = this.y + throwDirectionY * throwDistance;
         
         // Create smoke explosion effect at the calculated position
         const smokeParticles = this.scene.add.particles(bombX, bombY, 'particle', {
@@ -295,7 +317,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 // Animate smoke bomb explosion once it reaches target
                 this.scene.tweens.add({
                     targets: smokeBomb,
-                    scale: 0.6,
+                    scale: 0.8, // Larger explosion visual
                     alpha: 0,
                     duration: 300,
                     onComplete: () => {
@@ -306,7 +328,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         });
         
         // Destroy any enemies within the smoke bomb radius
-        const hitRadius = 150; // Larger than visual effect for gameplay
+        const hitRadius = 250; // Increased radius for gameplay (was 150)
         const assistants = this.scene.assistants.getChildren();
         
         for (let i = 0; i < assistants.length; i++) {
@@ -698,5 +720,28 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 });
             }
         });
+    }
+
+    // Find the nearest assistant to the player
+    findNearestAssistant() {
+        if (!this.scene.assistants) return null;
+        
+        let nearestAssistant = null;
+        let nearestDistance = 500; // Max distance to consider
+        
+        this.scene.assistants.getChildren().forEach(assistant => {
+            if (assistant.active) {
+                const distance = Phaser.Math.Distance.Between(
+                    this.x, this.y, assistant.x, assistant.y
+                );
+                
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestAssistant = assistant;
+                }
+            }
+        });
+        
+        return { assistant: nearestAssistant, distance: nearestDistance };
     }
 }
