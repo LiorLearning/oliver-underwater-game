@@ -108,9 +108,12 @@ export class Collectible extends Phaser.Physics.Arcade.Sprite {
       }
       // If this is a tool, add to collected tools
       else {
+        if (!window.gameState.collectedTools.includes(this.type)) {
           window.gameState.collectedTools = window.gameState.collectedTools || [];
           window.gameState.collectedTools.push(this.type);
+        }
       }
+      console.log(window.gameState.collectedTools);
   }
   
   createCollectEffect() {

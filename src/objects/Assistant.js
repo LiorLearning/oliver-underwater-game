@@ -25,7 +25,7 @@ export class Assistant extends Phaser.Physics.Arcade.Sprite {
       console.log(`Assistant created at (${x}, ${y}) with fixed body size ${this.body.width}x${this.body.height}`);
       
       // Enemy properties
-      this.damage = 10;
+      this.damage = 50;
       this.health = 30;
       this.isDead = false;
       
@@ -104,7 +104,7 @@ export class Assistant extends Phaser.Physics.Arcade.Sprite {
       // Do damage to player if alive
       if (!this.isDead && !player.invulnerable) {
           // Apply damage to global health
-          window.gameState.health = Math.max(0, window.gameState.health - 10);
+          window.gameState.health = Math.max(0, window.gameState.health - 50);
           player.health = window.gameState.health;
           
           // Flash red when taking damage

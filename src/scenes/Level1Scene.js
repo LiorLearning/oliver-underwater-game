@@ -289,7 +289,7 @@ export class Level1Scene extends Phaser.Scene {
       
       enemy.hitPlayer(player);
       this.uiManager.updateHealthBar();
-      this.uiManager.showMessage('Hit by enemy! -10 health, invincible for 5 seconds!');
+      this.uiManager.showMessage('Hit by enemy! -50 health, invincible for 5 seconds!');
       
       // Add additional debugging feedback
       console.log('Player hit by enemy! Health reduced to:', window.gameState.health);

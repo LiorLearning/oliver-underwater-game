@@ -53,6 +53,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         
         // Add spacebar input for smoke bombs
         this.spaceKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        
+        // Add shift key for dash ability
+        this.shiftKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
+        this.canDash = true;
+        this.dashCooldown = 1500; // ms
+        this.dashSpeed = 600; // Dash boost speed
+        this.dashDuration = 200; // ms
+        this.isDashing = false;
     }
     
     update() {
@@ -77,7 +85,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
         
         // Manual collision detection to ensure enemies hit the player
-        if (this.scene.assistants && !this.invulnerable) {
+        if (this.scene.assistants && !this.invulnerable && !this.isDashing) {
             const assistants = this.scene.assistants.getChildren();
             for (let i = 0; i < assistants.length; i++) {
                 const assistant = assistants[i];
@@ -109,6 +117,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         
         // Handle item collection with E key
         this.handleCollection();
+        
+        // Handle dash ability
+        this.handleDash();
     }
     
     handleCollection() {
@@ -360,6 +371,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
     
     handleMovement() {
+        // If currently dashing, skip normal movement handling
+        if (this.isDashing) return;
+        
         // Apply "friction" by slowing down the player gradually
         // rather than instantly setting velocity to 0
         if (!this.cursors.left.isDown && !this.cursors.right.isDown) {
@@ -565,5 +579,124 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             // Display message about collecting the item
             this.scene.uiManager.showMessage(`Collected ${collectible.getDescription()}`);
         }
+    }
+    
+    handleDash() {
+        // Trigger dash when shift key is pressed and player can dash
+        if (Phaser.Input.Keyboard.JustDown(this.shiftKey) && this.canDash) {
+            this.dash();
+        }
+    }
+    
+    dash() {
+        // Only dash if we can and are moving
+        if (!this.canDash || (this.body.velocity.x === 0 && this.body.velocity.y === 0)) {
+            return;
+        }
+        
+        this.canDash = false;
+        this.isDashing = true;
+        
+        // Store current velocity direction
+        let dashDirX = 0;
+        let dashDirY = 0;
+        
+        // First use movement keys for direction
+        if (this.cursors.left.isDown) dashDirX = -1;
+        else if (this.cursors.right.isDown) dashDirX = 1;
+        
+        if (this.cursors.up.isDown) dashDirY = -1;
+        else if (this.cursors.down.isDown) dashDirY = 1;
+        
+        // If no keys pressed, use current facing or velocity
+        if (dashDirX === 0 && dashDirY === 0) {
+            if (this.body.velocity.x !== 0 || this.body.velocity.y !== 0) {
+                // Use normalized velocity vector
+                const velMagnitude = Math.sqrt(this.body.velocity.x * this.body.velocity.x + this.body.velocity.y * this.body.velocity.y);
+                dashDirX = this.body.velocity.x / velMagnitude;
+                dashDirY = this.body.velocity.y / velMagnitude;
+            } else {
+                // Use facing direction as fallback
+                dashDirX = this.flipX ? -1 : 1;
+                dashDirY = 0;
+            }
+        }
+        
+        // Normalize diagonal dash
+        if (dashDirX !== 0 && dashDirY !== 0) {
+            dashDirX *= this.diagonalFactor;
+            dashDirY *= this.diagonalFactor;
+        }
+        
+        // Apply dash velocity
+        this.body.velocity.x = dashDirX * this.dashSpeed;
+        this.body.velocity.y = dashDirY * this.dashSpeed;
+        
+        // Add dash effect (streak or particles)
+        this.createDashEffect();
+        
+        // Make player invulnerable during dash
+        this.invulnerable = true;
+        
+        // Show message
+        this.scene.uiManager.showMessage("Dash!");
+        
+        // End dash after duration
+        this.scene.time.delayedCall(this.dashDuration, () => {
+            this.isDashing = false;
+            
+            // Return to normal speed (slower transition)
+            this.scene.tweens.add({
+                targets: this.body.velocity,
+                x: dashDirX * this.moveSpeed,
+                y: dashDirY * this.moveSpeed,
+                duration: 100
+            });
+        });
+        
+        // End invulnerability and cooldown
+        this.scene.time.delayedCall(this.dashDuration + 100, () => {
+            this.invulnerable = false;
+        });
+        
+        // Start cooldown
+        this.scene.time.delayedCall(this.dashCooldown, () => {
+            this.canDash = true;
+        });
+    }
+    
+    createDashEffect() {
+        // Create a visual streak effect behind the player
+        const dashTrail = this.scene.add.particles(this.x, this.y, 'particle', {
+            speed: { min: 10, max: 50 },
+            scale: { start: 0.4, end: 0 },
+            lifespan: 300,
+            blendMode: 'ADD',
+            tint: 0x00ffff,
+            quantity: 15,
+            emitZone: { type: 'edge', source: new Phaser.Geom.Circle(0, 0, 20), quantity: 15 }
+        });
+        
+        // Move the trail with the player briefly
+        this.scene.tweens.add({
+            targets: dashTrail,
+            x: this.x,
+            y: this.y,
+            duration: this.dashDuration,
+            onUpdate: () => {
+                dashTrail.setPosition(this.x, this.y);
+            },
+            onComplete: () => {
+                // Fade out the trail
+                this.scene.tweens.add({
+                    targets: dashTrail,
+                    alpha: 0,
+                    duration: 200,
+                    onComplete: () => {
+                        dashTrail.destroy();
+                    }
+                });
+            }
+        });
     }
 }

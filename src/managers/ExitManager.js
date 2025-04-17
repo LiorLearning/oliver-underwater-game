@@ -21,15 +21,8 @@ export class ExitManager {
         }).setOrigin(0.5);
     }
 
-    checkExitCondition() {
-        // Check if at least 1 tool is collected (changed from 3)
-        console.log('Checking exit condition:', window.gameState.collectedTools.length);
-        if (window.gameState.collectedTools.length >= 3 && !this.exitOpen) {
-            this.openExit();
-        }
-    }
-
     openExit() {
+        console.log('Opening exit');
         // Mark exit as open
         this.exitOpen = true;
         this.scene.exitOpen = true;
@@ -45,6 +38,7 @@ export class ExitManager {
     }
 
     _createOpenExitEffects() {
+        console.log('Creating open exit effects');
         // First make the exit invisible
         this.scene.exit.setAlpha(0);
         this.exitText.setAlpha(0);
