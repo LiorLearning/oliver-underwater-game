@@ -53,19 +53,18 @@ export class Level1Scene extends Phaser.Scene {
       this.mazeGenerator.createMaze();
       this.exitManager.createExitDoor();
       
-      // Create collectibles
-    //   this.createCoins();
+      // First create collectibles
       this.toolManager.createTools();
-      // Create smoke bomb collectibles
       this.createSmokeBombs();
       
-      // Create player and enemies
+      // Create player
       this.createPlayer();
       console.log('Player created:', !!this.player);
       
       this.createSidekick();
       console.log('Sidekick created:', !!this.sidekick);
       
+      // Create assistants after tools so they can guard them
       this.createAssistants();
       console.log('Assistants created:', !!this.assistants);
       console.log('Number of assistants:', this.assistants ? this.assistants.getChildren().length : 0);
@@ -92,7 +91,7 @@ export class Level1Scene extends Phaser.Scene {
       // Show instructions
       this.uiManager.showInstructions();
 
-    //   Add background music
+      // Add background music
       this.sound.play('theme', {
         loop: true,
         volume: 0.2
@@ -182,12 +181,28 @@ export class Level1Scene extends Phaser.Scene {
   createAssistants() {
     this.assistants = this.physics.add.group();
     
-    // Get safe positions from maze generator where walls are not present
-    const assistantCount = 8; // Number of assistants to place
-    const positions = this.mazeGenerator.getSafePositions(assistantCount);
+    // First, create assistants guarding each tool
+    if (this.tools && this.tools.getChildren().length > 0) {
+      this.tools.getChildren().forEach(tool => {
+        // Create an assistant near each tool
+        const guardDistance = 60; // Distance from tool to guard
+        const guardX = tool.x + Phaser.Math.Between(-guardDistance, guardDistance);
+        const guardY = tool.y + Phaser.Math.Between(-guardDistance, guardDistance);
+        
+        // Create assistant with guard parameters
+        const assistant = new Assistant(this, guardX, guardY, 'assistant', true, tool);
+        
+        this.assistants.add(assistant);
+      });
+    }
+    
+    // Then add additional random assistants
+    const additionalAssistants = 5; // Reduced from 8 since we already have some guards
+    const positions = this.mazeGenerator.getSafePositions(additionalAssistants);
     
     positions.forEach(pos => {
-        const assistant = new Assistant(this, pos.x, pos.y, 'assistant');
+        // Create regular assistants (not guards)
+        const assistant = new Assistant(this, pos.x, pos.y, 'assistant', false, null);
         this.assistants.add(assistant);
     });
 }
