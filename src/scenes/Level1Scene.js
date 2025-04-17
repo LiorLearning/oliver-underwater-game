@@ -117,36 +117,12 @@ export class Level1Scene extends Phaser.Scene {
       // Create a group for collectible coins
       this.collectibles = this.physics.add.group();
       
-      // Define coins positions
-      const coinPositions = [
-          { x: 300, y: 300 },
-          { x: 700, y: 500 },
-          { x: 1100, y: 300 },
-          { x: 1500, y: 900 },
-          { x: 900, y: 1100 },
-          { x: 1700, y: 1300 },
-          { x: 2100, y: 500 },
-          { x: 2500, y: 900 },
-          { x: 2300, y: 1700 },
-          { x: 1300, y: 1900 },
-          { x: 500, y: 1700 },
-          { x: 300, y: 1100 }
-      ];
+      // Get safe positions for coins using the mazeGenerator
+      const coinCount = 12; // Number of coins to place
+      const coinPositions = this.mazeGenerator.getSafePositions(coinCount);
       
-      // Adjust coin positions to be centered in maze cells
-      const cellSize = 200;
-      const coinPositionsAdjusted = coinPositions.map(pos => {
-          const cellX = Math.floor(pos.x / cellSize);
-          const cellY = Math.floor(pos.y / cellSize);
-          
-          return {
-              x: (cellX * cellSize) + (cellSize / 2),
-              y: (cellY * cellSize) + (cellSize / 2)
-          };
-      });
-      
-      // Create coins at adjusted positions
-      coinPositionsAdjusted.forEach(pos => {
+      // Create coins at these safe positions
+      coinPositions.forEach(pos => {
           const coin = new Collectible(this, pos.x, pos.y, 'collectible', 'coin');
           this.collectibles.add(coin);
       });
@@ -217,10 +193,10 @@ export class Level1Scene extends Phaser.Scene {
       this.currentTool = tool;
       
       // Play sound effect
-      if (this.sound && this.sound.add) {
-          const puzzleSound = this.sound.add('puzzle_start', { volume: 0.5 });
-          puzzleSound.play();
-      }
+    //   if (this.sound && this.sound.add) {
+    //       const puzzleSound = this.sound.add('puzzle_start', { volume: 0.5 });
+    //       puzzleSound.play();
+    //   }
       
       // Show message
       this.uiManager.showMessage(`Solve the puzzle to collect the ${tool.toolName || tool.type}!`);

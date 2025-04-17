@@ -31,6 +31,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // Control inputs
         this.cursors = scene.input.keyboard.createCursorKeys();
         
+        // Add E key for collecting coins/tools
+        this.eKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+        
         // Bubble trail particles
         this.createBubbleTrail(scene);
 
@@ -44,6 +47,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.smokeBombs = 3;
         this.canDeployBomb = true;
         this.bombCooldown = 1000; // ms
+        
+        // Collection properties
+        this.collectibleInRange = null;
+        this.collectRange = 100; // Distance within which collectibles can be picked up
         
         // Add spacebar input for smoke bombs
         this.spaceKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
@@ -61,6 +68,106 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         
         // Handle smoke bomb deployment
         this.handleSmokeBomb();
+        
+        // Handle item collection with E key
+        this.handleCollection();
+    }
+    
+    handleCollection() {
+        // Check for nearby collectibles
+        this.updateNearbyCollectibles();
+        
+        // Check if E key is pressed and player is near a collectible
+        if (Phaser.Input.Keyboard.JustDown(this.eKey) && this.collectibleInRange) {
+            this.collectItem(this.collectibleInRange);
+        }
+    }
+    
+    updateNearbyCollectibles() {
+        // Reset the collectible in range
+        this.collectibleInRange = null;
+        
+        // Check for coins in range
+        if (this.scene.collectibles) {
+            const nearestCoin = this.findNearestCollectible(this.scene.collectibles.getChildren());
+            if (nearestCoin) {
+                this.collectibleInRange = nearestCoin;
+            }
+        }
+        
+        // If no coin is in range, check for tools
+        if (!this.collectibleInRange && this.scene.tools) {
+            const nearestTool = this.findNearestCollectible(this.scene.tools.getChildren());
+            if (nearestTool) {
+                this.collectibleInRange = nearestTool;
+            }
+        }
+        
+        // Visual feedback for nearby collectible
+        if (this.collectibleInRange && !this.collectibleInRange.isHighlighted) {
+            // Add highlight effect to indicate collectible can be picked up
+            this.collectibleInRange.isHighlighted = true;
+            this.scene.tweens.add({
+                targets: this.collectibleInRange,
+                scale: this.collectibleInRange.scale * 1.2,
+                duration: 300,
+                yoyo: true,
+                repeat: -1
+            });
+            
+            // Show hint
+            this.scene.uiManager.showMessage('Press E to collect');
+        } else if (!this.collectibleInRange) {
+            // Remove highlight from any previously highlighted collectibles
+            if (this.scene.collectibles) {
+                this.scene.collectibles.getChildren().forEach(coin => {
+                    if (coin.isHighlighted) {
+                        coin.isHighlighted = false;
+                        this.scene.tweens.killTweensOf(coin);
+                        coin.setScale(coin.type === 'coin' ? 0.5 : 0.8);
+                    }
+                });
+            }
+            
+            if (this.scene.tools) {
+                this.scene.tools.getChildren().forEach(tool => {
+                    if (tool.isHighlighted) {
+                        tool.isHighlighted = false;
+                        this.scene.tweens.killTweensOf(tool);
+                        tool.setScale(0.8);
+                    }
+                });
+            }
+        }
+    }
+    
+    findNearestCollectible(collectibles) {
+        let nearestCollectible = null;
+        let nearestDistance = this.collectRange;
+        
+        collectibles.forEach(collectible => {
+            if (collectible.active) {
+                const distance = Phaser.Math.Distance.Between(
+                    this.x, this.y, collectible.x, collectible.y
+                );
+                
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestCollectible = collectible;
+                }
+            }
+        });
+        
+        return nearestCollectible;
+    }
+    
+    collectItem(collectible) {
+        // Determine type of collectible (coin or tool)
+        if (collectible.type === 'coin') {
+            this.scene.collectCoin(this, collectible);
+        } else {
+            this.scene.collectTool(this, collectible);
+        }
     }
     
     handleSmokeBomb() {
@@ -166,7 +273,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
         
         // Show message about using smoke bomb
-        this.scene.showMessage(`Smoke bomb deployed! ${this.smokeBombs} remaining`);
+        this.scene.uiManager.showMessage(`Smoke bomb deployed! ${this.smokeBombs} remaining`);
         
         // Start cooldown
         this.scene.time.delayedCall(this.bombCooldown, () => {

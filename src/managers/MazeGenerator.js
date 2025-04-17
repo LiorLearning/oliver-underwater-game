@@ -2,14 +2,9 @@ export class MazeGenerator {
     constructor(scene) {
         this.scene = scene;
         this.cellSize = 200; // Size of each maze cell
-    }
-
-    createMaze() {
-        // Create the maze walls group
-        this.scene.maze = this.scene.physics.add.staticGroup();
         
         // Define the maze layout (1 = wall, 0 = path)
-        const mazeLayout = [
+        this.mazeLayout = [
             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
             [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1],
             [1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1],
@@ -18,14 +13,19 @@ export class MazeGenerator {
             [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
             [1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1],
             [1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1],
-            [1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1],
+            [1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1],
             [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
             [1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1],
             [1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1],
         ];
+    }
+
+    createMaze() {
+        // Create the maze walls group
+        this.scene.maze = this.scene.physics.add.staticGroup();
         
         // Create wall objects based on the layout
-        this._createWalls(mazeLayout);
+        this._createWalls(this.mazeLayout);
         
         // Create boundary walls
         this._createBoundaryWalls();
@@ -97,23 +97,25 @@ export class MazeGenerator {
 
     // Get safe positions for placing entities (away from walls)
     getSafePositions(count) {
-        // Define areas where we know there are free spaces in the maze
-        const potentialSpaces = [
-            { x: 300, y: 300 },    // Top-left area
-            { x: 1100, y: 300 },   // Top-right area
-            { x: 500, y: 1100 },   // Middle-left area
-            { x: 1700, y: 700 },   // Middle-right area
-            { x: 900, y: 1900 },   // Bottom-left area
-            { x: 2300, y: 1500 },  // Bottom-right area
-            { x: 1900, y: 1100 },  // Center-right area
-            { x: 1300, y: 1500 },  // Center-bottom area
-            { x: 2700, y: 700 }    // Far right area
-        ];
+        // Collect all valid positions (open spaces)
+        const validPositions = [];
         
-        // Shuffle the potential spaces to get random positions
-        const shuffledSpaces = Phaser.Utils.Array.Shuffle([...potentialSpaces]);
+        for (let y = 0; y < this.mazeLayout.length; y++) {
+            for (let x = 0; x < this.mazeLayout[y].length; x++) {
+                if (this.mazeLayout[y][x] === 0) {
+                    // This is a path, not a wall - safe to place items here
+                    validPositions.push({
+                        x: x * this.cellSize + this.cellSize/2,
+                        y: y * this.cellSize + this.cellSize/2
+                    });
+                }
+            }
+        }
+        
+        // Shuffle the valid positions to get random ones
+        const shuffledPositions = Phaser.Utils.Array.Shuffle([...validPositions]);
         
         // Return the requested number of positions
-        return shuffledSpaces.slice(0, count);
+        return shuffledPositions.slice(0, count);
     }
 } 

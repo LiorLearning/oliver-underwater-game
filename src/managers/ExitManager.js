@@ -114,10 +114,10 @@ export class ExitManager {
         });
         
         // Play exit appearance sound if available
-        if (this.scene.sound && this.scene.sound.add) {
-            const exitSound = this.scene.sound.add('exit_appear', { volume: 0.8 });
-            exitSound.play();
-        }
+        // if (this.scene.sound && this.scene.sound.add) {
+        //     const exitSound = this.scene.sound.add('exit_appear', { volume: 0.8 });
+        //     exitSound.play();
+        // }
         
         // Show message to player
         this.scene.uiManager.showMessage('All tools collected! The exit is now open!');

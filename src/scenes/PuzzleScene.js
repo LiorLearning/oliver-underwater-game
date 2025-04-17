@@ -586,7 +586,7 @@ export class PuzzleScene extends Phaser.Scene {
       });
       
       // Emit a burst of particles
-      particles.explode(100);
+      particles.createEmitter().explode(100, 800, 600);
       
       // Camera shake effect
       this.cameras.main.shake(500, 0.01);
